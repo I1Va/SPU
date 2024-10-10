@@ -1,0 +1,12 @@
+string: ./logs/log.txt
+string: ./logs/log.txt
+string: ./logs/log.txt
+string: ./logs/log.txt
+-----------ERROR_LIST------------------
+ERR_CALLOC
+ERR_FILE_OPEN
+ERR_ARGS
+ERR_STACK_NULLPTR
+ERR_HASH_STACK_DATA_MISMATCH
+---------------------------------------
+

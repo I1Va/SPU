@@ -1,0 +1,16 @@
+15
+pop
+push 4
+pop
+push 0
+pop
+push 8
+pop
+push 0
+last
+push -2
+last
+last
+pop
+push -3
+last
