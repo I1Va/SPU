@@ -1,0 +1,28 @@
+push 13 ;пуш
+push 21
+push 423
+pop
+pop in
+out
+hlt
+push 13 ;пуш
+push 21
+push 423
+pop
+pop in
+out
+hlt
+push 13 ;пуш
+push 21
+push 423
+pop
+pop in
+out
+hlt
+push 13 ;пуш
+push 21
+push 423
+pop
+pop in
+out
+hlt

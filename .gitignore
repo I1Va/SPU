@@ -1,5 +1,0 @@
-*.out
-.clangd
-*.json
-docs
-temp.txt

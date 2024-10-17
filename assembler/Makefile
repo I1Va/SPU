@@ -30,11 +30,13 @@ BUILD_DIR = build
 
 SRC_DIR = src
 SRC_FILES = $(wildcard $(SRC_DIR)/*.cpp)
-SRC_OUTPUTFILE = $(BUILD_DIR)/assebler.out
+SRC_OUTPUTFILE = $(BUILD_DIR)/assembler.out
+
+# LD_FLAGS =
 
 .PHONY: build
 
-all: build launch
+all: launch
 
 make_src_folder:
 	@mkdir -p $(BUILD_DIR)
@@ -45,9 +47,11 @@ build: make_src_folder
 debug: make_src_folder
 	$(CC) $(SRC_FILES) -o $(SRC_OUTPUTFILE) $(DEFINE_FLAGS) $(INCLUDE_FLAGS) $(CC_DEBUG_FLAGS)
 
-launch: build
-	./$(SRC_OUTPUTFILE) -i=src_code.txt -o=code.txt
+launch: make_src_folder debug
+	./$(SRC_OUTPUTFILE)
 
 # clear
 
 # навести порядок в makefile
+
+

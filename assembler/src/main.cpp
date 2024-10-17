@@ -1,16 +1,17 @@
+#include <cstdlib>
 #include <stdio.h>
 
-#include "args_proc.h"
-#include "assembler.h"
+#include "error_processing.h"
+#include "general.h"
+#include "assembler_funcs.h"
 
-int main(const int argc, const char ** argv) {
-    assembler_config_t assembler_config = {}; assembler_config_ctor(&assembler_config);
+int main() {
+    unsigned long long last_err = ERR_OK;
 
-    const size_t n_options = 2;
-    opt_data options[n_options] = {};
-    opt_data_ctor(&options[0], "-i", "-in", "%s", &assembler_config.inp_file);
-    opt_data_ctor(&options[1], "-o", "-out", "%s", &assembler_config.out_file);
+    asm_code_read("./code.txt", &last_err);
+    if (last_err != ERR_OK) {
+        DEBUG_ERROR(last_err);
+        return EXIT_FAILURE;
+    }
 
-    get_options(argc, argv, options, n_options);
-    assembler_launch(assembler_config);
 }
