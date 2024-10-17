@@ -7,3 +7,13 @@ push 13
 push 4343
 push 23798
 pop
+in
+mult
+mult
+mult
+sub
+sub
+sub
+hlt
+mult
+add

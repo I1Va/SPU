@@ -112,12 +112,12 @@ void asm_commands_translate(int bin_code[], char asm_commands[][max_asm_command_
     assert(return_err != NULL);
 
     size_t com_idx = 0;
-    size_t code_idx = 0;
 
     while (com_idx < asm_commands_n) {
         if (strcmp(asm_commands[com_idx], "push") == 0) {
+            bin_code[com_idx] = PUSH_COM;
             com_idx++;
-            bin_code[code_idx++] = PUSH_COM;
+
             if (com_idx >= asm_commands_n) {
                 *return_err |= ERR_SYNTAX;
                 DEBUG_ERROR(*return_err)
@@ -126,17 +126,36 @@ void asm_commands_translate(int bin_code[], char asm_commands[][max_asm_command_
             }
 
             char *end_ptr = NULL;
-            int num = (int) strtol(asm_commands[com_idx++], &end_ptr, 10);
+            int num = (int) strtol(asm_commands[com_idx], &end_ptr, 10);
             if (*end_ptr != '\0') {
                 *return_err |= ERR_SYNTAX;
                 DEBUG_ERROR(ERR_SYNTAX);
                 debug("Can't convert command arg to int. Arg: '%s'", asm_commands[com_idx - 1]);
                 return;
             }
-            bin_code[code_idx++] = num;
-        } else if (strcmp(asm_commands[com_idx], "pop") == 0) {
+            bin_code[com_idx] = num;
             com_idx++;
-            bin_code[code_idx++] = POP_COM;
+        } else if (strcmp(asm_commands[com_idx], "pop") == 0) {
+            bin_code[com_idx] = POP_COM;
+            com_idx++;
+        } else if (strcmp(asm_commands[com_idx], "in") == 0) {
+            bin_code[com_idx] = IN_COM;
+            com_idx++;
+        } else if (strcmp(asm_commands[com_idx], "out") == 0) {
+            bin_code[com_idx] = OUT_COM;
+            com_idx++;
+        } else if (strcmp(asm_commands[com_idx], "add") == 0) {
+            bin_code[com_idx] = ADD_COM;
+            com_idx++;
+        } else if (strcmp(asm_commands[com_idx], "sub") == 0) {
+            bin_code[com_idx] = SUB_COM;
+            com_idx++;
+        } else if (strcmp(asm_commands[com_idx], "mult") == 0) {
+            bin_code[com_idx] = MULT_COM;
+            com_idx++;
+        } else if (strcmp(asm_commands[com_idx], "hlt") == 0) {
+            bin_code[com_idx] = HLT_COM;
+            com_idx++;
         } else {
             *return_err |= ERR_SYNTAX;
             DEBUG_ERROR(ERR_SYNTAX);

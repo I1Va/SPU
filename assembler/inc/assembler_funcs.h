@@ -11,6 +11,13 @@ enum asm_coms_nums
 {
     PUSH_COM = 1,
     POP_COM = 2,
+    IN_COM = 3,
+    OUT_COM = 4,
+    ADD_COM = 5,
+    SUB_COM = 6,
+    MULT_COM = 7,
+
+    HLT_COM = -1,
 };
 
 size_t asm_code_read(char asm_commands[][max_asm_command_size], const char path[], unsigned long long *return_err);
