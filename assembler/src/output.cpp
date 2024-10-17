@@ -4,6 +4,7 @@
 #include <string.h>
 
 #include "general.h"
+#include "output.h"
 
 void fprintf_border(FILE* stream, const char bord_char, const size_t bord_sz) {
     for (size_t i = 0; i < bord_sz; i++) {

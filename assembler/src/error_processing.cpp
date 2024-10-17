@@ -19,20 +19,7 @@ const char *get_bit_descr(unsigned long long err) {
         BIT_DESCR_(ERR_ARGS)
         BIT_DESCR_(ERR_WRONG_COEF)
         BIT_DESCR_(ERR_INIT)
-        BIT_DESCR_(ERR_STACK_NULLPTR)
-        BIT_DESCR_(ERR_STACK_CONT_NULLPTR)
-        BIT_DESCR_(ERR_STACK_OVERFLOW)
-        BIT_DESCR_(ERR_STACK_POP)
-        BIT_DESCR_(ERR_REALLOC)
-        BIT_DESCR_(ERR_CANARY_LEFT)
-        BIT_DESCR_(ERR_CANARY_MID)
-        BIT_DESCR_(ERR_CANARY_RIGHT)
-        BIT_DESCR_(ERR_CANARY_STK_RIGHT)
-        BIT_DESCR_(ERR_HASH_STACK_DATA_MISMATCH)
-        BIT_DESCR_(ERR_CANARY_STK_LEFT)
-        BIT_DESCR_(ERR_SYSTEM)
-        BIT_DESCR_(ERR_STACK_LAST_ELEM)
-        BIT_DESCR_(ERR_HASH_STACK_STRUCT_MISMATCH)
+        BIT_DESCR_(ERR_SYNTAX)
 
         default: return "VERY STRANGE ERROR:(";
     }
@@ -57,22 +44,6 @@ const char *get_descr(unsigned long long err) {
     DESCR_(err, ERR_ARGS)
     DESCR_(err, ERR_WRONG_COEF)
     DESCR_(err, ERR_INIT)
-    DESCR_(err, ERR_STACK_NULLPTR)
-    DESCR_(err, ERR_STACK_CONT_NULLPTR)
-    DESCR_(err, ERR_STACK_OVERFLOW)
-    DESCR_(err, ERR_STACK_POP)
-    DESCR_(err, ERR_REALLOC)
-
-    DESCR_(err, ERR_CANARY_MID)
-    DESCR_(err, ERR_CANARY_RIGHT)
-    DESCR_(err, ERR_CANARY_STK_RIGHT)
-    DESCR_(err, ERR_CANARY_STK_LEFT)
-
-    DESCR_(err, ERR_HASH_STACK_DATA_MISMATCH)
-    DESCR_(err, ERR_HASH_STACK_STRUCT_MISMATCH)
-    DESCR_(err, ERR_STACK_LAST_ELEM)
-
-    DESCR_(err, ERR_SYSTEM)
 
     if (err == ERR_OK) {
         return "ERR_OK";
