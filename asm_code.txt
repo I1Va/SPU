@@ -1,0 +1,21 @@
+push 1
+push 1
+mult
+out
+push 2
+push 2
+mult out
+push 3
+push 3
+
+mult
+out
+
+push 0
+out
+
+push 10
+push 7
+sub
+out
+hlt

@@ -22,7 +22,7 @@ CC_DEBUG_FLAGS = -D _DEBUG -ggdb3 -std=c++17 -O0 -Wall -Wextra -Weffc++ -Waggres
 	 integer-divide-by-zero,leak,nonnull-attribute,null,object-size,return,returns-nonnull-attribute,$\
 	 shift,signed-integer-overflow,undefined,unreachable,vla-bound,vptr
 
-INCLUDE_FLAGS = -Iinc -I./../stack/inc
+INCLUDE_FLAGS = -I./inc -I./../stack_lib -L./../stack_lib -lstack
 
 DEFINE_FLAGS = -D_DEBUG
 
@@ -30,7 +30,7 @@ BUILD_DIR = build
 
 SRC_DIR = src
 SRC_FILES = $(wildcard $(SRC_DIR)/*.cpp)
-SRC_OUTPUTFILE = $(BUILD_DIR)/assembler.out
+SRC_OUTPUTFILE = $(BUILD_DIR)/processor.out
 
 STACK_SM_DIR = ./../stack/src
 STACK_SM_FILES = $(wildcard $(STACK_SM_DIR)/*.cpp)
@@ -41,17 +41,16 @@ STACK_SM_FILES = $(wildcard $(STACK_SM_DIR)/*.cpp)
 all: launch
 
 launch: debug
-	./build/VM.out
+	./build/processor.out
 
 make_src_folder:
 	@mkdir -p $(BUILD_DIR)
 
 build: make_src_folder
-	echo $(STACK_SM_FILES)
-	$(CC) $(SRC_FILES) -O0 -o $(SRC_OUTPUTFILE) $(STACK_SM_FILES) $(INCLUDE_FLAGS) $(CC_FLAGS)
+	@$(CC) $(SRC_FILES) -O0 -o $(SRC_OUTPUTFILE) $(STACK_SM_FILES) $(INCLUDE_FLAGS) $(CC_FLAGS)
 
 debug: make_src_folder
-	$(CC) $(SRC_FILES) -o $(SRC_OUTPUTFILE) $(STACK_SM_FILES) $(DEFINE_FLAGS) $(INCLUDE_FLAGS) $(CC_DEBUG_FLAGS)
+	@$(CC) $(SRC_FILES) -o $(SRC_OUTPUTFILE) $(STACK_SM_FILES) $(DEFINE_FLAGS) $(INCLUDE_FLAGS) $(CC_DEBUG_FLAGS)
 
 clean:
 	rm -rf $(wildcard $(BUILD_DIR)/*.out)

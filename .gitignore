@@ -1,0 +1,4 @@
+_docs
+*.o
+*.exe
+*.out
