@@ -3,6 +3,8 @@
 
 #include <stdio.h>
 
+#include "proc_err.h"
+
 enum asm_coms_nums
 {
     PUSH_COM = 1,
@@ -16,8 +18,8 @@ enum asm_coms_nums
     HLT_COM = -1,
 };
 
-size_t bin_code_read(const char path[], int code[], unsigned long long *return_err);
+size_t bin_code_read(const char path[], int code[], proc_err *return_err);
 
-void execute_code(int code[], unsigned long long *return_err);
+void execute_code(int code[], proc_err *return_err);
 
 #endif // PROCESSOR_FUNC_H

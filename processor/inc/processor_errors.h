@@ -1,3 +1,0 @@
-enum proc_err {
-    
-}

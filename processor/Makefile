@@ -51,7 +51,7 @@ shift,signed-integer-overflow,undefined,unreachable,vla-bound,vptr
 #EXTRA_FLAGS used in linking in debug mode
 EXTRA_FLAGS =
 
-OUTFILE_NAME = assembler.out
+
 OUT_O_DIR = build
 COMMONINC = -I./inc
 SRC = ./src
@@ -68,8 +68,13 @@ endif
 override CFLAGS += $(COMMONINC) # CFLAGS - environment variable. We can change it using only override, but not +=, :=, =
 
 #/---------------------------SOURCE_FILES---------------------------\#
-CSRC = main.cpp src/processor_func.cpp
+CSRC = main.cpp src/processor_func.cpp src/proc_err.cpp
 #/------------------------------------------------------------------\#
+
+#/--------------------------OUT_FILE_NAME---------------------------\#
+OUTFILE_NAME = processor.out
+#/------------------------------------------------------------------\#
+
 
 
 #/----------------------------SUBMODULES----------------------------\#
