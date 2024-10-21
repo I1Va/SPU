@@ -1,6 +1,10 @@
 #include <stdio.h>
 
-#include "stack.h"
+typedef int stack_elem_t;
+
+#include "./../stack/inc/stack_output.h"
+#include "./../stack/inc/error_processing.h"
+
 #include "processor_func.h"
 
 size_t bin_code_read(const char path[], int code[], unsigned long long *return_err) {

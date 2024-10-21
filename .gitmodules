@@ -4,3 +4,6 @@
 [submodule "assembler/general_output"]
 	path = assembler/general_output
 	url = https://github.com/I1Va/general_output.git
+[submodule "processor/stack"]
+	path = processor/stack
+	url = https://github.com/I1Va/stack.git
