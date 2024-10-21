@@ -1,0 +1,6 @@
+[submodule "assembler/stack"]
+	path = assembler/stack
+	url = https://github.com/I1Va/stack.git
+[submodule "assembler/general_output"]
+	path = assembler/general_output
+	url = https://github.com/I1Va/general_output.git

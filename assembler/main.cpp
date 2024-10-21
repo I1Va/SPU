@@ -21,5 +21,6 @@ int main() {
 
     bin_code_write("./../bin_code.txt", bin_code, asm_commands_n, &last_err);
 
+    char *a = (char *) calloc(3, 3);
 
 }

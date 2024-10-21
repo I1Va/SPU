@@ -5,8 +5,9 @@
 
 #include "assembler_funcs.h"
 #include "error_processing.h"
-#include "output.h"
 #include "general.h"
+
+#include "./../general_output/inc/general_output.h"
 
 bool asm_getline(FILE* stream, char line[], const size_t n) {
     assert(stream != NULL);
