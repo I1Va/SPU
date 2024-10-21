@@ -4,7 +4,8 @@
 
 #include "processor_func.h"
 
-#include "stack.h"
+#include "./../stack/inc/error_processing.h"
+#include "./../stack/inc/general.h"
 #include "output.h"
 
 const size_t mx_code_sz = 128;
