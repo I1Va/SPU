@@ -16,14 +16,11 @@ int main() {
     int code[mx_code_sz] = {};
 
     size_t n_coms = bin_code_read("./../bin_code.txt", code, &proc_last_err);
-    // fprintf_bin_code(stdout, code, n_coms);
 
+    fprintf(stdout, "\n------------------BIN_CODE-------------\n");
+    fprintf_bin_code(stdout, code, n_coms);
+    fprintf(stdout, "---------------------------------------\n");
     execute_code(code, &proc_last_err);
-
-    if (proc_last_err != PROC_ERR_OK) {
-        DEBUG_ERROR(last_err);
-        return EXIT_FAILURE;
-    }
 
     return EXIT_SUCCESS;
 }

@@ -9,6 +9,40 @@
 
 #include "./../general_output/inc/general_output.h"
 
+struct reg_t {
+    int id;
+    const char *name;
+};
+
+
+reg_t reg_list[] = {
+    {0, "AX"},
+    {1, "BX"},
+    {2, "CX"},
+    {3, "DX"},
+};
+
+const size_t reg_list_sz = sizeof(reg_list) / sizeof(reg_t);
+
+int get_reg_id(const char name[]) {
+    for (size_t reg_idx = 0; reg_idx < reg_list_sz; reg_idx++) {
+        if (strcmp(reg_list[reg_idx].name, name) == 0) {
+            return reg_list[reg_idx].id;
+        }
+    }
+    return -1;
+}
+
+// bool upd_reg(const char name[], const int value) {
+//     for (size_t reg_idx = 0; reg_idx < reg_list_sz; reg_idx++) {
+//         if (strcmp(reg_list[reg_idx].name, name) == 0) {
+//             reg_list[reg_idx].value = value;
+//             return true;
+//         }
+//     }
+//     return false;
+// }
+
 bool asm_getline(FILE* stream, char line[], const size_t n) {
     assert(stream != NULL);
     assert(line != NULL);
@@ -136,7 +170,43 @@ void asm_commands_translate(int bin_code[], char asm_commands[][max_asm_command_
             }
             bin_code[com_idx] = num;
             com_idx++;
-        } else if (strcmp(asm_commands[com_idx], "pop") == 0) {
+        } else if (strcmp(asm_commands[com_idx], "pushr") == 0) {
+            bin_code[com_idx] = PUSHR_COM;
+            com_idx++;
+
+            if (com_idx >= asm_commands_n) {
+                *return_err |= ERR_SYNTAX;
+                DEBUG_ERROR(*return_err)
+                debug("pushr hasn't required arg");
+                return;
+            }
+
+            const char *reg_name = asm_commands[com_idx];
+
+            int reg_id = get_reg_id(reg_name);
+
+            if (reg_id == -1) {
+                *return_err |= ERR_SYNTAX;
+                DEBUG_ERROR(*return_err)
+                debug("invalid register name {%s}]", reg_name);
+                return;
+            }
+
+            bin_code[com_idx] = reg_id;
+            com_idx++;
+        } else if (strcmp(asm_commands[com_idx], "popr") == 0) {
+            bin_code[com_idx] = POPR_COM;
+            com_idx++;
+
+            const char *reg_name = asm_commands[com_idx];
+            int reg_id = get_reg_id(reg_name);
+            bin_code[com_idx] = reg_id;
+            com_idx++;
+        }
+
+
+
+        else if (strcmp(asm_commands[com_idx], "pop") == 0) {
             bin_code[com_idx] = POP_COM;
             com_idx++;
         } else if (strcmp(asm_commands[com_idx], "in") == 0) {
@@ -157,7 +227,13 @@ void asm_commands_translate(int bin_code[], char asm_commands[][max_asm_command_
         } else if (strcmp(asm_commands[com_idx], "hlt") == 0) {
             bin_code[com_idx] = HLT_COM;
             com_idx++;
-        } else {
+        }
+
+
+
+
+
+        else {
             *return_err |= ERR_SYNTAX;
             DEBUG_ERROR(ERR_SYNTAX);
             debug("Unknown command: '%s'", asm_commands[com_idx]);

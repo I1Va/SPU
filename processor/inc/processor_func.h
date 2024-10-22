@@ -14,10 +14,11 @@ enum asm_coms_nums
     ADD_COM = 5,
     SUB_COM = 6,
     MULT_COM = 7,
+    PUSHR_COM = 8,
+    POPR_COM = 9,
 
     HLT_COM = -1,
 };
-
 size_t bin_code_read(const char path[], int code[], proc_err *return_err);
 
 void execute_code(int code[], proc_err *return_err);

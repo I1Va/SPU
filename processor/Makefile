@@ -51,7 +51,7 @@ shift,signed-integer-overflow,undefined,unreachable,vla-bound,vptr
 #EXTRA_FLAGS used in linking in debug mode
 EXTRA_FLAGS =
 
-
+OUTFILE_NAME = processor.out
 OUT_O_DIR = build
 COMMONINC = -I./inc
 SRC = ./src
@@ -67,21 +67,14 @@ endif
 
 override CFLAGS += $(COMMONINC) # CFLAGS - environment variable. We can change it using only override, but not +=, :=, =
 
-#/---------------------------SOURCE_FILES---------------------------\#
-CSRC = main.cpp src/processor_func.cpp src/proc_err.cpp
-#/------------------------------------------------------------------\#
+#There are src folder files. We can use wildcard $(SRC_DIR)/*.cpp, but it isn't a good manner
+CSRC = main.cpp src/proc_err.cpp src/proc_output.cpp src/processor_func.cpp
 
-#/--------------------------OUT_FILE_NAME---------------------------\#
-OUTFILE_NAME = processor.out
-#/------------------------------------------------------------------\#
-
-
-
-#/----------------------------SUBMODULES----------------------------\#
+#/---------------------------SUBMODULES--------------------\#
 SUBMODULES = stack
 COMMONINC += $(addsuffix /inc,-I./$(SUBMODULES))
 CSRC += $(wildcard $(addsuffix /src,$(SUBMODULES))/*.cpp)
-#/------------------------------------------------------------------\#
+#/---------------------------SUBMODULES--------------------\#
 
 
 

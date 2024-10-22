@@ -9,13 +9,16 @@ typedef int stack_elem_t;
 #include "processor_func.h"
 #include "proc_err.h"
 
+const size_t reg_list_sz = 4;
+int reg_list[4] = {};
+
 size_t bin_code_read(const char path[], int code[], proc_err *return_err) {
     size_t com_idx = 0;
 
     FILE *bin_code_file_ptr = fopen(path, "r");
     if (bin_code_file_ptr == NULL) {
         proc_add_err(return_err, PROC_ERR_FILE_OPEN);
-        DEBUG_ERROR(ERR_FILE_OPEN)
+        DEBUG_ERROR(STK_ERR_FILE_OPEN)
         CLEAR_MEMORY(exit_mark)
     }
 
@@ -49,8 +52,14 @@ void execute_code(int code[], proc_err *return_err) {
             stack_push(&stk, argv, &stk_last_err);
             continue;
         }
-        if (com == POP_COM) {
-            stack_pop(&stk, &stk_last_err);
+        if (com == PUSHR_COM) {
+            int reg_id = code[ip++];
+            stack_push(&stk, reg_list[reg_id], &stk_last_err);
+            continue;
+        }
+        if (com == POPR_COM) {
+            int reg_id = code[ip++];
+            reg_list[reg_id] = stack_pop(&stk, &stk_last_err);
             continue;
         }
         if (com == IN_COM) {

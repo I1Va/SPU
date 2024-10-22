@@ -1,21 +1,17 @@
-push 1
-push 1
-mult
-out
-push 2
-push 2
-mult out
-push 3
-push 3
 
-mult
-out
+;pushr AX; Пушит в стэк значение регистра AX
+;popr BX; val = stack_pop; BX = val;
 
+
+push 12;
+push 42;
+popr AX
+popr BX
+pushr BX
+out
 push 0
 out
-
-push 10
-push 7
-sub
+pushr AX
 out
 hlt
+
