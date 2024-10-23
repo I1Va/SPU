@@ -115,6 +115,8 @@ const size_t max_com_sz = 16;
 struct com_t {
     const char com_name[max_com_sz];
     enum asm_coms_nums com_num;
+    void (*write_func)(int bin_code[], char asm_commands[][max_asm_command_size], size_t *com_idx,
+        const size_t asm_commands_n, const enum asm_coms_nums com_num, asm_err *return_err);
 };
 
 bool check_label_elem(const char com[]) {
@@ -127,29 +129,255 @@ bool check_label_elem(const char com[]) {
     return false;
 }
 
+void write_push(int bin_code[], char asm_commands[][max_asm_command_size], size_t *com_idx,
+    const size_t asm_commands_n, const enum asm_coms_nums com_num, asm_err *return_err)
+{
+    assert(bin_code != NULL);
+    assert(com_idx != NULL);
+
+    bin_code[*com_idx] = PUSH_COM;
+    (*com_idx)++;
+    if (*com_idx >= asm_commands_n) {
+        asm_add_err(return_err, ASM_ERR_SYNTAX);
+        DEBUG_ERROR(*return_err)
+        debug("push hasn't required arg");
+        return;
+    }
+
+    char *end_ptr = NULL;
+    int num = (int) strtol(asm_commands[*com_idx], &end_ptr, 10);
+    if (*end_ptr != '\0') {
+        asm_add_err(return_err, ASM_ERR_SYNTAX);
+        DEBUG_ERROR(ASM_ERR_SYNTAX);
+        debug("Can't convert command arg to int. Arg: '%s'", asm_commands[*com_idx - 1]);
+        return;
+    }
+    bin_code[*com_idx] = num;
+    (*com_idx)++;
+}
+
+void write_push_register(int bin_code[], char asm_commands[][max_asm_command_size], size_t *com_idx,
+    const size_t asm_commands_n, const enum asm_coms_nums com_num, asm_err *return_err)
+{
+    assert(bin_code != NULL);
+    assert(com_idx != NULL);
+
+    bin_code[*com_idx] = PUSHR_COM;
+    (*com_idx)++;
+
+    if (*com_idx >= asm_commands_n) {
+        asm_add_err(return_err, ASM_ERR_SYNTAX);
+        DEBUG_ERROR(*return_err)
+        debug("pushr hasn't required arg");
+        return;
+    }
+
+    const char *reg_name = asm_commands[*com_idx];
+
+    int reg_id = get_reg_id(reg_name);
+
+    if (reg_id == -1) {
+        asm_add_err(return_err, ASM_ERR_SYNTAX);
+        DEBUG_ERROR(*return_err)
+        debug("invalid register name {%s}]", reg_name);
+        return;
+    }
+
+    bin_code[*com_idx] = reg_id;
+    (*com_idx)++;
+}
+
+void write_pop_register(int bin_code[], char asm_commands[][max_asm_command_size], size_t *com_idx,
+    const size_t asm_commands_n, const enum asm_coms_nums com_num, asm_err *return_err)
+{
+    assert(bin_code != NULL);
+    assert(com_idx != NULL);
+
+    bin_code[*com_idx] = POPR_COM;
+    (*com_idx)++;
+
+    const char *reg_name = asm_commands[*com_idx];
+    int reg_id = get_reg_id(reg_name);
+
+    if (reg_id == -1) {
+        asm_add_err(return_err, ASM_ERR_SYNTAX);
+        DEBUG_ERROR(*return_err)
+        debug("invalid register name {%s}]", reg_name);
+        return;
+    }
+
+    bin_code[*com_idx] = reg_id;
+    (*com_idx)++;
+}
+
+void write_jump(int bin_code[], char asm_commands[][max_asm_command_size], size_t *com_idx,
+    const size_t asm_commands_n, const enum asm_coms_nums com_num, asm_err *return_err)
+{
+    assert(bin_code != NULL);
+    assert(com_idx != NULL);
+
+    bin_code[*com_idx] = JMP_COM;
+    (*com_idx)++;
+
+    if (*com_idx >= asm_commands_n) {
+        asm_add_err(return_err, ASM_ERR_SYNTAX);
+        DEBUG_ERROR(*return_err)
+        debug("JMP hasn't required arg");
+        return;
+    }
+
+    if (check_label_elem(asm_commands[*com_idx])) {
+        char label_name[max_label_name_sz] = {};
+
+        sscanf(asm_commands[*com_idx], "%s", label_name);
+        int label_addr = get_label_addr_from_list(label_name);
+        if (label_addr == -1) {
+            fix_up_table_add(*com_idx, label_name);
+            (*com_idx)++;
+            return;
+        }
+
+        bin_code[*com_idx] = label_addr;
+        (*com_idx)++;
+        return;
+    }
+
+    char *end_ptr = NULL;
+    int num = (int) strtol(asm_commands[*com_idx], &end_ptr, 10);
+    if (*end_ptr != '\0') {
+        asm_add_err(return_err, ASM_ERR_SYNTAX);
+        DEBUG_ERROR(ASM_ERR_SYNTAX);
+        debug("Can't convert command arg to int. Arg: '%s'", asm_commands[*com_idx - 1]);
+        return;
+    }
+    bin_code[*com_idx] = num;
+    (*com_idx)++;
+}
+
+void write_label(int bin_code[], char asm_commands[][max_asm_command_size], size_t *com_idx,
+    const size_t asm_commands_n, const enum asm_coms_nums com_num, asm_err *return_err)
+{
+    char label_name[max_label_name_sz] = {};
+    sscanf(asm_commands[*com_idx], "%s", label_name);
+    if (get_label_addr_from_list(label_name) != -1) {
+        *return_err = ASM_ERR_SYNTAX;
+        DEBUG_ERROR(ASM_ERR_SYNTAX);
+        debug("label redefenition: '%s'", label_name);
+        return;
+    }
+    add_label_to_list((int) *com_idx, label_name);
+    bin_code[*com_idx] = LABEL_COM;
+    (*com_idx)++;
+}
+
+void write_conditional_jmp(int bin_code[], char asm_commands[][max_asm_command_size], size_t *com_idx,
+    const size_t asm_commands_n, const enum asm_coms_nums com_num, asm_err *return_err)
+{
+    bin_code[*com_idx] = com_num;
+    (*com_idx)++;
+    if (*com_idx >= asm_commands_n) {
+        asm_add_err(return_err, ASM_ERR_SYNTAX);
+        DEBUG_ERROR(*return_err)
+        debug("JA hasn't required arg");
+        return;
+    }
+    if (check_label_elem(asm_commands[*com_idx])) {
+        char label_name[max_label_name_sz] = {};
+
+        sscanf(asm_commands[*com_idx], "%s", label_name);
+        int label_addr = get_label_addr_from_list(label_name);
+        if (label_addr == -1) {
+            fix_up_table_add(*com_idx, label_name);
+            (*com_idx)++;
+            return;
+        }
+
+        bin_code[*com_idx] = label_addr;
+        (*com_idx)++;
+    }
+}
+
+void write_simple_com(int bin_code[], char asm_commands[][max_asm_command_size], size_t *com_idx,
+    const size_t asm_commands_n, const enum asm_coms_nums com_num, asm_err *return_err)
+{
+    bin_code[*com_idx] = com_num;
+    (*com_idx)++;
+}
+
+void write_call_com(int bin_code[], char asm_commands[][max_asm_command_size], size_t *com_idx,
+    const size_t asm_commands_n, const enum asm_coms_nums com_num, asm_err *return_err)
+{
+    bin_code[*com_idx] = CALL_COM;
+    (*com_idx)++;
+
+    if (*com_idx >= asm_commands_n) {
+        asm_add_err(return_err, ASM_ERR_SYNTAX);
+        DEBUG_ERROR(*return_err)
+        debug("CALL hasn't required arg");
+        return;
+    }
+
+    if (check_label_elem(asm_commands[*com_idx])) {
+        char label_name[max_label_name_sz] = {};
+
+        sscanf(asm_commands[*com_idx], "%s", label_name);
+        int label_addr = get_label_addr_from_list(label_name);
+        if (label_addr == -1) {
+            fix_up_table_add(*com_idx, label_name);
+            (*com_idx)++;
+            return;
+        }
+
+        bin_code[*com_idx] = label_addr;
+        (*com_idx)++;
+        return;
+    }
+
+    char *end_ptr = NULL;
+    int num = (int) strtol(asm_commands[*com_idx], &end_ptr, 10);
+    if (*end_ptr != '\0') {
+        asm_add_err(return_err, ASM_ERR_SYNTAX);
+        DEBUG_ERROR(ASM_ERR_SYNTAX);
+        debug("Can't convert command arg to int. Arg: '%s'", asm_commands[*com_idx - 1]);
+        return;
+    }
+    bin_code[*com_idx] = num;
+    (*com_idx)++;
+}
+
 com_t asm_com_list[] =
 {
-    {"push"  , PUSH_COM}, // FIXME: вставить указатель на функции вызова
-    {"pop"   , POP_COM},
-    {"in"    , IN_COM},
-    {"out"   , OUT_COM},
-    {"add"   , ADD_COM},
-    {"sub"   , SUB_COM},
-    {"mult"  , MULT_COM},
-    {"pushr" , PUSHR_COM},
-    {"popr"  , POPR_COM},
-    {"jmp"   , JMP_COM},
-    {"ja"    , JA_COM},
-    {"jae"   , JAE_COM},
-    {"jb"    , JB_COM},
-    {"jbe"   , JBE_COM},
-    {"je"    , JE_COM},
-    {"jne"   , JNE_COM},
-    {"hlt"   , HLT_COM},
-    {"call"  , CALL_COM},
-    {"ret"   , RET_COM},
-    {"LABEL:", LABEL_COM},
+    {"push"  , PUSH_COM, write_push}, // FIXME: вставить указатель на функции вызова
+    {"pop"   , POP_COM, write_simple_com},
+    {"in"    , IN_COM, write_simple_com},
+    {"out"   , OUT_COM, write_simple_com},
+    {"add"   , ADD_COM, write_simple_com},
+    {"sub"   , SUB_COM, write_simple_com},
+    {"mult"  , MULT_COM, write_simple_com},
+    {"pushr" , PUSHR_COM, write_push_register},
+    {"popr"  , POPR_COM, write_pop_register},
+    {"jmp"   , JMP_COM, write_jump},
+    {"ja"    , JA_COM, write_conditional_jmp},
+    {"jae"   , JAE_COM, write_conditional_jmp},
+    {"jb"    , JB_COM, write_conditional_jmp},
+    {"jbe"   , JBE_COM, write_conditional_jmp},
+    {"je"    , JE_COM, write_conditional_jmp},
+    {"jne"   , JNE_COM, write_conditional_jmp},
+    {"hlt"   , HLT_COM, write_conditional_jmp},
+    {"call"  , CALL_COM, write_call_com},
+    {"ret"   , RET_COM, write_simple_com},
 };
+
+
+
+
+
+
+
+
+
+
+
 
 const size_t asm_com_list_sz = sizeof(asm_com_list) / sizeof(com_t);
 
@@ -264,209 +492,6 @@ size_t asm_code_read(char asm_commands[][max_asm_command_size], const char path[
 }
 
 
-void write_push(int bin_code[], char asm_commands[][max_asm_command_size], size_t *com_idx, const size_t asm_commands_n, asm_err *return_err) {
-    assert(bin_code != NULL);
-    assert(com_idx != NULL);
-
-    bin_code[*com_idx] = PUSH_COM;
-    (*com_idx)++;
-    if (*com_idx >= asm_commands_n) {
-        asm_add_err(return_err, ASM_ERR_SYNTAX);
-        DEBUG_ERROR(*return_err)
-        debug("push hasn't required arg");
-        return;
-    }
-
-    char *end_ptr = NULL;
-    int num = (int) strtol(asm_commands[*com_idx], &end_ptr, 10);
-    if (*end_ptr != '\0') {
-        asm_add_err(return_err, ASM_ERR_SYNTAX);
-        DEBUG_ERROR(ASM_ERR_SYNTAX);
-        debug("Can't convert command arg to int. Arg: '%s'", asm_commands[*com_idx - 1]);
-        return;
-    }
-    bin_code[*com_idx] = num;
-    (*com_idx)++;
-}
-
-void write_push_register(int bin_code[], char asm_commands[][max_asm_command_size], size_t *com_idx, const size_t asm_commands_n, asm_err *return_err) {
-    assert(bin_code != NULL);
-    assert(com_idx != NULL);
-
-    bin_code[*com_idx] = PUSHR_COM;
-    (*com_idx)++;
-
-    if (*com_idx >= asm_commands_n) {
-        asm_add_err(return_err, ASM_ERR_SYNTAX);
-        DEBUG_ERROR(*return_err)
-        debug("pushr hasn't required arg");
-        return;
-    }
-
-    const char *reg_name = asm_commands[*com_idx];
-
-    int reg_id = get_reg_id(reg_name);
-
-    if (reg_id == -1) {
-        asm_add_err(return_err, ASM_ERR_SYNTAX);
-        DEBUG_ERROR(*return_err)
-        debug("invalid register name {%s}]", reg_name);
-        return;
-    }
-
-    bin_code[*com_idx] = reg_id;
-    (*com_idx)++;
-}
-
-void write_pop_register(int bin_code[], char asm_commands[][max_asm_command_size], size_t *com_idx, const size_t asm_commands_n, asm_err *return_err) {
-    assert(bin_code != NULL);
-    assert(com_idx != NULL);
-
-    bin_code[*com_idx] = POPR_COM;
-    (*com_idx)++;
-
-    const char *reg_name = asm_commands[*com_idx];
-    int reg_id = get_reg_id(reg_name);
-
-    if (reg_id == -1) {
-        asm_add_err(return_err, ASM_ERR_SYNTAX);
-        DEBUG_ERROR(*return_err)
-        debug("invalid register name {%s}]", reg_name);
-        return;
-    }
-
-    bin_code[*com_idx] = reg_id;
-    (*com_idx)++;
-}
-
-void write_jump(int bin_code[], char asm_commands[][max_asm_command_size], size_t *com_idx, const size_t asm_commands_n, asm_err *return_err) {
-    assert(bin_code != NULL);
-    assert(com_idx != NULL);
-
-    bin_code[*com_idx] = JMP_COM;
-    (*com_idx)++;
-
-    if (*com_idx >= asm_commands_n) {
-        asm_add_err(return_err, ASM_ERR_SYNTAX);
-        DEBUG_ERROR(*return_err)
-        debug("JMP hasn't required arg");
-        return;
-    }
-
-    if (check_label_elem(asm_commands[*com_idx])) {
-        char label_name[max_label_name_sz] = {};
-
-        sscanf(asm_commands[*com_idx], "%s", label_name);
-        int label_addr = get_label_addr_from_list(label_name);
-        if (label_addr == -1) {
-            fix_up_table_add(*com_idx, label_name);
-            (*com_idx)++;
-            return;
-        }
-
-        bin_code[*com_idx] = label_addr;
-        (*com_idx)++;
-        return;
-    }
-
-    char *end_ptr = NULL;
-    int num = (int) strtol(asm_commands[*com_idx], &end_ptr, 10);
-    if (*end_ptr != '\0') {
-        asm_add_err(return_err, ASM_ERR_SYNTAX);
-        DEBUG_ERROR(ASM_ERR_SYNTAX);
-        debug("Can't convert command arg to int. Arg: '%s'", asm_commands[*com_idx - 1]);
-        return;
-    }
-    bin_code[*com_idx] = num;
-    (*com_idx)++;
-}
-
-void write_label(int bin_code[], char asm_commands[][max_asm_command_size], size_t *com_idx, const size_t asm_commands_n, asm_err *return_err) {
-    char label_name[max_label_name_sz] = {};
-    sscanf(asm_commands[*com_idx], "%s", label_name);
-    if (get_label_addr_from_list(label_name) != -1) {
-        *return_err = ASM_ERR_SYNTAX;
-        DEBUG_ERROR(ASM_ERR_SYNTAX);
-        debug("label redefenition: '%s'", label_name);
-        return;
-    }
-    add_label_to_list((int) *com_idx, label_name);
-    bin_code[*com_idx] = LABEL_COM;
-    (*com_idx)++;
-}
-
-void write_conditional_jmp(int bin_code[], char asm_commands[][max_asm_command_size], size_t *com_idx,
-    const size_t asm_commands_n, asm_err *return_err, const enum asm_coms_nums com_num)
-{
-    bin_code[*com_idx] = com_num;
-    (*com_idx)++;
-    if (*com_idx >= asm_commands_n) {
-        asm_add_err(return_err, ASM_ERR_SYNTAX);
-        DEBUG_ERROR(*return_err)
-        debug("JA hasn't required arg");
-        return;
-    }
-    if (check_label_elem(asm_commands[*com_idx])) {
-        char label_name[max_label_name_sz] = {};
-
-        sscanf(asm_commands[*com_idx], "%s", label_name);
-        int label_addr = get_label_addr_from_list(label_name);
-        if (label_addr == -1) {
-            fix_up_table_add(*com_idx, label_name);
-            (*com_idx)++;
-            return;
-        }
-
-        bin_code[*com_idx] = label_addr;
-        (*com_idx)++;
-    }
-}
-
-void write_simple_com(int bin_code[], size_t *com_idx, const asm_coms_nums asm_num) {
-    bin_code[*com_idx] = asm_num;
-    (*com_idx)++;
-}
-
-void write_call_com(int bin_code[], char asm_commands[][max_asm_command_size], size_t *com_idx,
-    const size_t asm_commands_n, asm_err *return_err)
-{
-    bin_code[*com_idx] = CALL_COM;
-    (*com_idx)++;
-
-    if (*com_idx >= asm_commands_n) {
-        asm_add_err(return_err, ASM_ERR_SYNTAX);
-        DEBUG_ERROR(*return_err)
-        debug("CALL hasn't required arg");
-        return;
-    }
-
-    if (check_label_elem(asm_commands[*com_idx])) {
-        char label_name[max_label_name_sz] = {};
-
-        sscanf(asm_commands[*com_idx], "%s", label_name);
-        int label_addr = get_label_addr_from_list(label_name);
-        if (label_addr == -1) {
-            fix_up_table_add(*com_idx, label_name);
-            (*com_idx)++;
-            return;
-        }
-
-        bin_code[*com_idx] = label_addr;
-        (*com_idx)++;
-        return;
-    }
-
-    char *end_ptr = NULL;
-    int num = (int) strtol(asm_commands[*com_idx], &end_ptr, 10);
-    if (*end_ptr != '\0') {
-        asm_add_err(return_err, ASM_ERR_SYNTAX);
-        DEBUG_ERROR(ASM_ERR_SYNTAX);
-        debug("Can't convert command arg to int. Arg: '%s'", asm_commands[*com_idx - 1]);
-        return;
-    }
-    bin_code[*com_idx] = num;
-    (*com_idx)++;
-}
 
 void asm_commands_translate(int bin_code[], char asm_commands[][max_asm_command_size],
         const size_t asm_commands_n, asm_err *return_err)
@@ -488,64 +513,64 @@ void asm_commands_translate(int bin_code[], char asm_commands[][max_asm_command_
 
         switch (com_num) {
             case PUSH_COM:
-                write_push(bin_code, asm_commands, &com_idx, asm_commands_n, return_err);
+                write_push(bin_code, asm_commands, &com_idx, asm_commands_n, PUSH_COM, return_err);
                 break;
             case PUSHR_COM:
-                write_push_register(bin_code, asm_commands, &com_idx, asm_commands_n, return_err);
+                write_push_register(bin_code, asm_commands, &com_idx, asm_commands_n, PUSHR_COM, return_err);
                 break;
             case POPR_COM:
-                write_pop_register(bin_code, asm_commands, &com_idx, asm_commands_n, return_err);
+                write_pop_register(bin_code, asm_commands, &com_idx, asm_commands_n, POPR_COM, return_err);
                 break;
             case JMP_COM:
-                write_jump(bin_code, asm_commands, &com_idx, asm_commands_n, return_err);
+                write_jump(bin_code, asm_commands, &com_idx, asm_commands_n, JMP_COM, return_err);
                 break;
             case LABEL_COM:
-                write_label(bin_code, asm_commands, &com_idx, asm_commands_n, return_err);
+                write_label(bin_code, asm_commands, &com_idx, asm_commands_n, LABEL_COM, return_err);
                 break;
             case JA_COM:
-                write_conditional_jmp(bin_code, asm_commands, &com_idx, asm_commands_n, return_err, JA_COM);
+                write_conditional_jmp(bin_code, asm_commands, &com_idx, asm_commands_n, JA_COM, return_err);
                 break;
             case JAE_COM:
-                write_conditional_jmp(bin_code, asm_commands, &com_idx, asm_commands_n, return_err, JAE_COM);
+                write_conditional_jmp(bin_code, asm_commands, &com_idx, asm_commands_n, JAE_COM, return_err);
                 break;
             case JB_COM:
-                write_conditional_jmp(bin_code, asm_commands, &com_idx, asm_commands_n, return_err, JB_COM);
+                write_conditional_jmp(bin_code, asm_commands, &com_idx, asm_commands_n, JB_COM, return_err);
                 break;
             case JBE_COM:
-                write_conditional_jmp(bin_code, asm_commands, &com_idx, asm_commands_n, return_err, JBE_COM);
+                write_conditional_jmp(bin_code, asm_commands, &com_idx, asm_commands_n, JBE_COM, return_err);
                 break;
             case JE_COM:
-                write_conditional_jmp(bin_code, asm_commands, &com_idx, asm_commands_n, return_err, JE_COM);
+                write_conditional_jmp(bin_code, asm_commands, &com_idx, asm_commands_n, JE_COM, return_err);
                 break;
             case JNE_COM:
-                write_conditional_jmp(bin_code, asm_commands, &com_idx, asm_commands_n, return_err, JNE_COM);
+                write_conditional_jmp(bin_code, asm_commands, &com_idx, asm_commands_n, JNE_COM, return_err);
                 break;
             case IN_COM:
-                write_simple_com(bin_code, &com_idx, IN_COM);
+                write_simple_com(bin_code, asm_commands, &com_idx, asm_commands_n, IN_COM, return_err);
                 break;
             case OUT_COM:
-                write_simple_com(bin_code, &com_idx, OUT_COM);
+                write_simple_com(bin_code, asm_commands, &com_idx, asm_commands_n, OUT_COM, return_err);
                 break;
             case ADD_COM:
-                write_simple_com(bin_code, &com_idx, ADD_COM);
+                write_simple_com(bin_code, asm_commands, &com_idx, asm_commands_n, ADD_COM, return_err);
                 break;
             case SUB_COM:
-                write_simple_com(bin_code, &com_idx, SUB_COM);
+                write_simple_com(bin_code, asm_commands, &com_idx, asm_commands_n, SUB_COM, return_err);
                 break;
             case MULT_COM:
-                write_simple_com(bin_code, &com_idx, MULT_COM);
+                write_simple_com(bin_code, asm_commands, &com_idx, asm_commands_n, JNE_COM, return_err);
                 break;
             case HLT_COM:
-                write_simple_com(bin_code, &com_idx, HLT_COM);
+                write_simple_com(bin_code, asm_commands, &com_idx, asm_commands_n, HLT_COM, return_err);
                 break;
             case RET_COM:
-                write_simple_com(bin_code, &com_idx, RET_COM);
+                write_simple_com(bin_code, asm_commands, &com_idx, asm_commands_n, RET_COM, return_err);
                 break;
             case CALL_COM:
-                write_call_com(bin_code, asm_commands, &com_idx, asm_commands_n, return_err);
+                write_call_com(bin_code, asm_commands, &com_idx, asm_commands_n, CALL_COM, return_err);
                 break;
             case POP_COM:
-                write_simple_com(bin_code, &com_idx, POP_COM);
+                write_simple_com(bin_code, asm_commands, &com_idx, asm_commands_n, POP_COM, return_err);
                 break;
             case UNKNOWN_COM:
                 asm_add_err(return_err, ASM_ERR_SYNTAX);
