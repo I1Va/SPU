@@ -4,7 +4,7 @@ popr AX;
 push 1;
 popr BX;
 
-in;
+in; // ENTER FIBONACHI IDX
 popr DX;
 
 push 0;

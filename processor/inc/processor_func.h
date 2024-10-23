@@ -19,8 +19,14 @@ enum asm_coms_nums
     JMP_COM = 10,
     LABEL_COM = 11,
     JA_COM = 12,
+    JAE_COM = 13,
+    JB_COM = 14,
+    JBE_COM = 15,
+    JE_COM = 16,
+    JNE_COM = 17,
 
     HLT_COM = -1,
+    UNKNOWN_COM = -2,
 };
 
 size_t bin_code_read(const char path[], int code[], proc_err *return_err);

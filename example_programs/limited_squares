@@ -4,6 +4,7 @@ popr AX; initialization
 push 0;
 popr BX; initialization
 
+cycle1:
 cycle:
     pushr AX;
     pushr AX;
@@ -23,7 +24,7 @@ cycle:
 pushr BX;
 push 10;
 
-ja cycle:
+jne cycle:
 
 hlt;
 

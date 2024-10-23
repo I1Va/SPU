@@ -1,27 +1,57 @@
 [0;20m-[0;20m-[0;20m-[0;20m-[0;20m-[0;20m-[0;20m-[0;20m-[0;20m-[0;20m-[0;20m-[0;20m-[0;20m-[0;20m-[0;20m-[0;20m-[0;20m-[0;20m-[0;20m-[0;20m-[0;20m-[0;20m-[0;20m-[0;20m-[0;20m-[0;20m-[0;20m-[0;20m-[0;20m-[0;20m-[0;20m-[0;20m-[0;20m-[0;20m-[0;20m-[0;20m-[0;20m-[0;20m-[0;20m-[0;20m-[0;20m-[0;20m-[0;20m-[0;31mCOMMANDS_LIST[0;20m[0;20m-[0;20m-[0;20m-[0;20m-[0;20m-[0;20m-[0;20m-[0;20m-[0;20m-[0;20m-[0;20m-[0;20m-[0;20m-[0;20m-[0;20m-[0;20m-[0;20m-[0;20m-[0;20m-[0;20m-[0;20m-[0;20m-[0;20m-[0;20m-[0;20m-[0;20m-[0;20m-[0;20m-[0;20m-[0;20m-[0;20m-[0;20m-[0;20m-[0;20m-[0;20m-[0;20m-[0;20m-[0;20m-[0;20m-[0;20m-[0;20m-[0;20m-[0;20m-[0;20m-
-'push'; '0'; 'popr'; 'AX'; 'push'; '0'; 'popr'; 'BX'; 'cycle:'; 'pushr'; 'AX'; 'pushr'; 
-'AX'; 'mult'; 'out'; 'pushr'; 'AX'; 'push'; '1'; 'add'; 'popr'; 'AX'; 'pushr'; 'BX'; 
-'push'; '1'; 'add'; 'popr'; 'BX'; 'pushr'; 'BX'; 'push'; '10'; 'ja'; 'cycle:'; 'hlt'; 
+'push'; '0'; 'popr'; 'AX'; 'push'; '1'; 'popr'; 'BX'; 'in'; 'popr'; 'DX'; 'push'; '0'; 
+'pushr'; 'DX'; 'jb'; 'exit:'; 'pushr'; 'DX'; 'push'; '0'; 'jne'; 'end_if1:'; 'pushr'; 'AX'; 
+'out'; 'jmp'; 'exit:'; 'end_if1:'; 'pushr'; 'DX'; 'push'; '1'; 'jne'; 'end_if2:'; 'pushr'; 
+'BX'; 'out'; 'jmp'; 'exit:'; 'end_if2:'; 'push'; '1'; 'pushr'; 'DX'; 'sub'; 'popr'; 'DX'; 
+'cycle:'; 'pushr'; 'AX'; 'pushr'; 'BX'; 'add'; 'popr'; 'CX'; 'pushr'; 'BX'; 'popr'; 'AX'; 
+'pushr'; 'CX'; 'popr'; 'BX'; 'push'; '1'; 'pushr'; 'DX'; 'sub'; 'popr'; 'DX'; 'pushr'; 
+'DX'; 'push'; '0'; 'jne'; 'cycle:'; 'pushr'; 'BX'; 'out'; 'exit:'; 'hlt'; 
 [0;20m#[0;20m#[0;20m#[0;20m#[0;20m#[0;20m#[0;20m#[0;20m#[0;20m#[0;20m#[0;20m#[0;20m#[0;20m#[0;20m#[0;20m#[0;20m#[0;20m#[0;20m#[0;20m#[0;20m#[0;20m#[0;20m#[0;20m#[0;20m#[0;20m#[0;20m#[0;20m#[0;20m#[0;20m#[0;20m#[0;20m#[0;20m#[0;20m#[0;20m#[0;20m#[0;20m#[0;20m#[0;20m#[0;20m#[0;20m#[0;20m#[0;20m#[0;20m#[0;20m#[0;20m#[0;20m#[0;20m#[0;20m#[0;20m#[0;20m#[0;20m#[0;20m#[0;20m#[0;20m#[0;20m#[0;20m#[0;20m#[0;20m#[0;20m#[0;20m#[0;20m#[0;20m#[0;20m#[0;20m#[0;20m#[0;20m#[0;20m#[0;20m#[0;20m#[0;20m#[0;20m#[0;20m#[0;20m#[0;20m#[0;20m#[0;20m#[0;20m#[0;20m#[0;20m#[0;20m#[0;20m#[0;20m#[0;20m#[0;20m#[0;20m#[0;20m#[0;20m#[0;20m#[0;20m#[0;20m#[0;20m#[0;20m#[0;20m#[0;20m#[0;20m#[0;20m#[0;20m#[0;20m#[0;20m#[0;20m#
 
 command: 'push' : {1}
 command: 'popr' : {9}
 command: 'push' : {1}
 command: 'popr' : {9}
+command: 'in' : {3}
+command: 'popr' : {9}
+command: 'push' : {1}
+command: 'pushr' : {8}
+command: 'jb' : {14}
+command: 'pushr' : {8}
+command: 'push' : {1}
+command: 'jne' : {17}
+command: 'pushr' : {8}
+command: 'out' : {4}
+command: 'jmp' : {10}
+command: 'end_if1:' : {11}
+command: 'pushr' : {8}
+command: 'push' : {1}
+command: 'jne' : {17}
+command: 'pushr' : {8}
+command: 'out' : {4}
+command: 'jmp' : {10}
+command: 'end_if2:' : {11}
+command: 'push' : {1}
+command: 'pushr' : {8}
+command: 'sub' : {6}
+command: 'popr' : {9}
 command: 'cycle:' : {11}
 command: 'pushr' : {8}
 command: 'pushr' : {8}
-command: 'mult' : {7}
+command: 'add' : {5}
+command: 'popr' : {9}
+command: 'pushr' : {8}
+command: 'popr' : {9}
+command: 'pushr' : {8}
+command: 'popr' : {9}
+command: 'push' : {1}
+command: 'pushr' : {8}
+command: 'sub' : {6}
+command: 'popr' : {9}
+command: 'pushr' : {8}
+command: 'push' : {1}
+command: 'jne' : {17}
+command: 'pushr' : {8}
 command: 'out' : {4}
-command: 'pushr' : {8}
-command: 'push' : {1}
-command: 'add' : {5}
-command: 'popr' : {9}
-command: 'pushr' : {8}
-command: 'push' : {1}
-command: 'add' : {5}
-command: 'popr' : {9}
-command: 'pushr' : {8}
-command: 'push' : {1}
-command: 'ja' : {12}
+command: 'exit:' : {11}
 command: 'hlt' : {-1}

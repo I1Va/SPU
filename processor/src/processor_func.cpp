@@ -79,6 +79,54 @@ void execute_code(int code[], proc_err *return_err) {
             }
             continue;
         }
+        if (com == JAE_COM) {
+            int addr = code[ip++];
+            int argv1 = stack_pop(&stk, &stk_last_err);
+            int argv2 = stack_pop(&stk, &stk_last_err);
+            if (argv1 >= argv2) {
+                ip = addr;
+            }
+            continue;
+        }
+        if (com == JB_COM) {
+            int addr = code[ip++];
+            int argv1 = stack_pop(&stk, &stk_last_err);
+            int argv2 = stack_pop(&stk, &stk_last_err);
+            if (argv1 < argv2) {
+                ip = addr;
+            }
+            continue;
+        }
+        if (com == JBE_COM) {
+            int addr = code[ip++];
+            int argv1 = stack_pop(&stk, &stk_last_err);
+            int argv2 = stack_pop(&stk, &stk_last_err);
+            // printf("argv1: {%d}, argv2: {%d}", argv1, argv2);
+            if (argv1 <= argv2) {
+                ip = addr;
+            }
+            continue;
+        }
+        if (com == JE_COM) {
+
+            int addr = code[ip++];
+            int argv1 = stack_pop(&stk, &stk_last_err);
+            int argv2 = stack_pop(&stk, &stk_last_err);
+            if (argv1 == argv2) {
+                ip = addr;
+            }
+            continue;
+        }
+        if (com == JNE_COM) {
+            int addr = code[ip++];
+            int argv1 = stack_pop(&stk, &stk_last_err);
+            int argv2 = stack_pop(&stk, &stk_last_err);
+            // printf("argv1: {%d}, argv2: {%d}\n", argv1, argv2);
+            if (argv1 != argv2) {
+                ip = addr;
+            }
+            continue;
+        }
         if (com == IN_COM) {
             int argv = 0;
             scanf("%d", &argv);

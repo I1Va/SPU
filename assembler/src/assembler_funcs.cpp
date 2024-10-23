@@ -140,6 +140,11 @@ com_t asm_com_list[] =
     {"popr"  , POPR_COM},
     {"jmp"   , JMP_COM},
     {"ja"    , JA_COM},
+    {"jae"   , JAE_COM},
+    {"jb"    , JB_COM},
+    {"jbe"   , JBE_COM},
+    {"je"    , JE_COM},
+    {"jne"   , JNE_COM},
     {"hlt"   , HLT_COM},
     {"LABEL:", LABEL_COM},
 };
@@ -257,7 +262,6 @@ size_t asm_code_read(char asm_commands[][max_asm_command_size], const char path[
 }
 
 
-
 void write_push(int bin_code[], char asm_commands[][max_asm_command_size], size_t *com_idx, const size_t asm_commands_n, asm_err *return_err) {
     assert(bin_code != NULL);
     assert(com_idx != NULL);
@@ -311,7 +315,6 @@ void write_push_register(int bin_code[], char asm_commands[][max_asm_command_siz
     bin_code[*com_idx] = reg_id;
     (*com_idx)++;
 }
-
 
 void write_pop_register(int bin_code[], char asm_commands[][max_asm_command_size], size_t *com_idx, const size_t asm_commands_n, asm_err *return_err) {
     assert(bin_code != NULL);
@@ -379,13 +382,21 @@ void write_jump(int bin_code[], char asm_commands[][max_asm_command_size], size_
 void write_label(int bin_code[], char asm_commands[][max_asm_command_size], size_t *com_idx, const size_t asm_commands_n, asm_err *return_err) {
     char label_name[max_label_name_sz] = {};
     sscanf(asm_commands[*com_idx], "%s", label_name);
+    if (get_label_addr_from_list(label_name) != -1) {
+        *return_err = ASM_ERR_SYNTAX;
+        DEBUG_ERROR(ASM_ERR_SYNTAX);
+        debug("label redefenition: '%s'", label_name);
+        return;
+    }
     add_label_to_list((int) *com_idx, label_name);
     bin_code[*com_idx] = LABEL_COM;
     (*com_idx)++;
 }
 
-void write_ja(int bin_code[], char asm_commands[][max_asm_command_size], size_t *com_idx, const size_t asm_commands_n, asm_err *return_err) {
-    bin_code[*com_idx] = JA_COM;
+void write_conditional_jmp(int bin_code[], char asm_commands[][max_asm_command_size], size_t *com_idx,
+    const size_t asm_commands_n, asm_err *return_err, const enum asm_coms_nums com_num)
+{
+    bin_code[*com_idx] = com_num;
     (*com_idx)++;
     if (*com_idx >= asm_commands_n) {
         asm_add_err(return_err, ASM_ERR_SYNTAX);
@@ -449,7 +460,22 @@ void asm_commands_translate(int bin_code[], char asm_commands[][max_asm_command_
                 write_label(bin_code, asm_commands, &com_idx, asm_commands_n, return_err);
                 break;
             case JA_COM:
-                write_ja(bin_code, asm_commands, &com_idx, asm_commands_n, return_err);
+                write_conditional_jmp(bin_code, asm_commands, &com_idx, asm_commands_n, return_err, JA_COM);
+                break;
+            case JAE_COM:
+                write_conditional_jmp(bin_code, asm_commands, &com_idx, asm_commands_n, return_err, JAE_COM);
+                break;
+            case JB_COM:
+                write_conditional_jmp(bin_code, asm_commands, &com_idx, asm_commands_n, return_err, JB_COM);
+                break;
+            case JBE_COM:
+                write_conditional_jmp(bin_code, asm_commands, &com_idx, asm_commands_n, return_err, JBE_COM);
+                break;
+            case JE_COM:
+                write_conditional_jmp(bin_code, asm_commands, &com_idx, asm_commands_n, return_err, JE_COM);
+                break;
+            case JNE_COM:
+                write_conditional_jmp(bin_code, asm_commands, &com_idx, asm_commands_n, return_err, JNE_COM);
                 break;
             case IN_COM:
                 write_simple_com(bin_code, &com_idx, IN_COM);
