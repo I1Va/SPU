@@ -18,6 +18,7 @@ enum asm_coms_nums
     POPR_COM = 9,
     JMP_COM = 10,
     LABEL_COM = 11,
+    JA_COM = 12,
 
     HLT_COM = -1,
 };

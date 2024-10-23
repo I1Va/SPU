@@ -6,8 +6,6 @@ popr BX; initialization
 
 cycle:
     pushr AX;
-    pushr AX;
-    mult;
     out;
 
     pushr AX;

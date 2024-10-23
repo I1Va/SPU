@@ -52,33 +52,46 @@ void execute_code(int code[], proc_err *return_err) {
             stack_push(&stk, argv, &stk_last_err);
             continue;
         }
+
         if (com == PUSHR_COM) {
             int reg_id = code[ip++];
             stack_push(&stk, reg_list[reg_id], &stk_last_err);
             continue;
         }
+
         if (com == POPR_COM) {
             int reg_id = code[ip++];
             reg_list[reg_id] = stack_pop(&stk, &stk_last_err);
             continue;
         }
+
         if (com == JMP_COM) {
             int addr = code[ip++];
             ip = addr;
             continue;
         }
-
+        if (com == JA_COM) {
+            int addr = code[ip++];
+            int argv1 = stack_pop(&stk, &stk_last_err);
+            int argv2 = stack_pop(&stk, &stk_last_err);
+            if (argv1 > argv2) {
+                ip = addr;
+            }
+            continue;
+        }
         if (com == IN_COM) {
             int argv = 0;
             scanf("%d", &argv);
             stack_push(&stk, argv, &stk_last_err);
             continue;
         }
+
         if (com == OUT_COM) {
             int argv = stack_pop(&stk, &stk_last_err);
             printf("%d\n", argv);
             continue;
         }
+
         if (com == ADD_COM) {
             int argv1 = stack_pop(&stk, &stk_last_err);
             int argv2 = stack_pop(&stk, &stk_last_err);
@@ -87,6 +100,7 @@ void execute_code(int code[], proc_err *return_err) {
             stack_push(&stk, argv3, &stk_last_err);
             continue;
         }
+
         if (com == SUB_COM) {
             int argv1 = stack_pop(&stk, &stk_last_err);
             int argv2 = stack_pop(&stk, &stk_last_err);
@@ -95,6 +109,7 @@ void execute_code(int code[], proc_err *return_err) {
             stack_push(&stk, argv3, &stk_last_err);
             continue;
         }
+
         if (com == MULT_COM) {
             int argv1 = stack_pop(&stk, &stk_last_err);
             int argv2 = stack_pop(&stk, &stk_last_err);
@@ -103,13 +118,14 @@ void execute_code(int code[], proc_err *return_err) {
             stack_push(&stk, argv3, &stk_last_err);
             continue;
         }
+
         if (com == LABEL_COM) {
             continue;
         }
         if (com == HLT_COM) {
             break;
         }
-        proc_add_err(return_err, PROC_ERR_SYNTAX);
+        proc_add_err(return_err, PROC_UNKNOWN_COM);
         if (*return_err != PROC_ERR_OK) {
             debug("proc_error: {%llu}", *return_err);
         }

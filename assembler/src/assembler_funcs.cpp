@@ -318,7 +318,7 @@ void asm_commands_translate(int bin_code[], char asm_commands[][max_asm_command_
             if (com_idx >= asm_commands_n) {
                 asm_add_err(return_err, ASM_ERR_SYNTAX);
                 DEBUG_ERROR(*return_err)
-                debug("push hasn't required arg");
+                debug("JMP hasn't required arg");
                 return;
             }
             if (check_label_elem(asm_commands[com_idx])) {
@@ -346,6 +346,30 @@ void asm_commands_translate(int bin_code[], char asm_commands[][max_asm_command_
             }
             bin_code[com_idx++] = num;
             continue;
+        }
+        if (strcmp(asm_commands[com_idx], "ja") == 0) {
+            bin_code[com_idx] = JA_COM;
+            com_idx++;
+            if (com_idx >= asm_commands_n) {
+                asm_add_err(return_err, ASM_ERR_SYNTAX);
+                DEBUG_ERROR(*return_err)
+                debug("JA hasn't required arg");
+                return;
+            }
+            if (check_label_elem(asm_commands[com_idx])) {
+                char label_name[max_label_name_sz] = {};
+
+                sscanf(asm_commands[com_idx], "%s", label_name);
+                int label_addr = get_label_addr_from_list(label_name);
+                if (label_addr == -1) {
+                    fix_up_table_add(com_idx, label_name);
+                    com_idx++;
+                    continue;
+                }
+
+                bin_code[com_idx++] = label_addr;
+                continue;
+            }
         }
 
         if (strcmp(asm_commands[com_idx], "pop") == 0) {
