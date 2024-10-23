@@ -117,31 +117,20 @@ struct com_t {
     enum asm_coms_nums com_num;
 };
 
-bool check_label_elem(const char com[]) {
-    int len_rec_com = 0;
-    char label[max_label_name_sz] = {};
-    sscanf(com, "%s%n", label, &len_rec_com);
-    if (label[len_rec_com - 1] == ':') {
-        return true;
-    }
-    return false;
-}
-
 com_t asm_com_list[] =
 {
-    {"push"  , PUSH_COM},
-    {"pop"   , POP_COM},
-    {"in"    , IN_COM},
-    {"out"   , OUT_COM},
-    {"add"   , ADD_COM},
-    {"sub"   , SUB_COM},
-    {"mult"  , MULT_COM},
-    {"pushr" , PUSHR_COM},
-    {"popr"  , POPR_COM},
-    {"jmp"   , JMP_COM},
-    {"ja"    , JA_COM},
-    {"hlt"   , HLT_COM},
-    {"LABEL:", LABEL_COM},
+    {"push" , PUSH_COM},
+    {"pop"  , POP_COM},
+    {"in"   , IN_COM},
+    {"out"  , OUT_COM},
+    {"add"  , ADD_COM},
+    {"sub"  , SUB_COM},
+    {"mult" , MULT_COM},
+    {"pushr", PUSHR_COM},
+    {"popr" , POPR_COM},
+    {"jmp"  , JMP_COM},
+    {"ja"   , JA_COM},
+    {"hlt"  , HLT_COM},
 };
 
 const size_t asm_com_list_sz = sizeof(asm_com_list) / sizeof(com_t);
@@ -153,9 +142,6 @@ enum asm_coms_nums get_asm_com_num_from_list(const char name[]) {
         if (strcmp(name, asm_com_list[com_idx].com_name) == 0) {
             return asm_com_list[com_idx].com_num;
         }
-    }
-    if (check_label_elem(name)) {
-        return LABEL_COM;
     }
     return UNKNOWN_COM;
 }
@@ -256,7 +242,15 @@ size_t asm_code_read(char asm_commands[][max_asm_command_size], const char path[
     return 0;
 }
 
-
+bool check_label_elem(const char com[]) {
+    int len_rec_com = 0;
+    char label[max_label_name_sz] = {};
+    sscanf(com, "%s%n", label, &len_rec_com);
+    if (label[len_rec_com - 1] == ':') {
+        return true;
+    }
+    return false;
+}
 
 void write_push(int bin_code[], char asm_commands[][max_asm_command_size], size_t *com_idx, const size_t asm_commands_n, asm_err *return_err) {
     assert(bin_code != NULL);
@@ -334,85 +328,6 @@ void write_pop_register(int bin_code[], char asm_commands[][max_asm_command_size
     (*com_idx)++;
 }
 
-void write_jump(int bin_code[], char asm_commands[][max_asm_command_size], size_t *com_idx, const size_t asm_commands_n, asm_err *return_err) {
-    assert(bin_code != NULL);
-    assert(com_idx != NULL);
-
-    bin_code[*com_idx] = JMP_COM;
-    (*com_idx)++;
-
-    if (*com_idx >= asm_commands_n) {
-        asm_add_err(return_err, ASM_ERR_SYNTAX);
-        DEBUG_ERROR(*return_err)
-        debug("JMP hasn't required arg");
-        return;
-    }
-
-    if (check_label_elem(asm_commands[*com_idx])) {
-        char label_name[max_label_name_sz] = {};
-
-        sscanf(asm_commands[*com_idx], "%s", label_name);
-        int label_addr = get_label_addr_from_list(label_name);
-        if (label_addr == -1) {
-            fix_up_table_add(*com_idx, label_name);
-            (*com_idx)++;
-            return;
-        }
-
-        bin_code[*com_idx] = label_addr;
-        (*com_idx)++;
-        return;
-    }
-
-    char *end_ptr = NULL;
-    int num = (int) strtol(asm_commands[*com_idx], &end_ptr, 10);
-    if (*end_ptr != '\0') {
-        asm_add_err(return_err, ASM_ERR_SYNTAX);
-        DEBUG_ERROR(ASM_ERR_SYNTAX);
-        debug("Can't convert command arg to int. Arg: '%s'", asm_commands[*com_idx - 1]);
-        return;
-    }
-    bin_code[*com_idx] = num;
-    (*com_idx)++;
-}
-
-void write_label(int bin_code[], char asm_commands[][max_asm_command_size], size_t *com_idx, const size_t asm_commands_n, asm_err *return_err) {
-    char label_name[max_label_name_sz] = {};
-    sscanf(asm_commands[*com_idx], "%s", label_name);
-    add_label_to_list((int) *com_idx, label_name);
-    bin_code[*com_idx] = LABEL_COM;
-    (*com_idx)++;
-}
-
-void write_ja(int bin_code[], char asm_commands[][max_asm_command_size], size_t *com_idx, const size_t asm_commands_n, asm_err *return_err) {
-    bin_code[*com_idx] = JA_COM;
-    (*com_idx)++;
-    if (*com_idx >= asm_commands_n) {
-        asm_add_err(return_err, ASM_ERR_SYNTAX);
-        DEBUG_ERROR(*return_err)
-        debug("JA hasn't required arg");
-        return;
-    }
-    if (check_label_elem(asm_commands[*com_idx])) {
-        char label_name[max_label_name_sz] = {};
-
-        sscanf(asm_commands[*com_idx], "%s", label_name);
-        int label_addr = get_label_addr_from_list(label_name);
-        if (label_addr == -1) {
-            fix_up_table_add(*com_idx, label_name);
-            (*com_idx)++;
-            return;
-        }
-
-        bin_code[*com_idx] = label_addr;
-        (*com_idx)++;
-    }
-}
-
-void write_simple_com(int bin_code[], size_t *com_idx, const asm_coms_nums asm_num) {
-    bin_code[*com_idx] = asm_num;
-    (*com_idx)++;
-}
 
 void asm_commands_translate(int bin_code[], char asm_commands[][max_asm_command_size],
         const size_t asm_commands_n, asm_err *return_err)
@@ -430,8 +345,6 @@ void asm_commands_translate(int bin_code[], char asm_commands[][max_asm_command_
         // label_list_dump(stdout);
         // printf("\n");
         enum asm_coms_nums com_num = get_asm_com_num_from_list(asm_commands[com_idx]);
-        printf("command: '%s' : {%d}\n", asm_commands[com_idx], com_num);
-
         switch (com_num) {
             case PUSH_COM:
                 write_push(bin_code, asm_commands, &com_idx, asm_commands_n, return_err);
@@ -440,52 +353,79 @@ void asm_commands_translate(int bin_code[], char asm_commands[][max_asm_command_
                 write_push_register(bin_code, asm_commands, &com_idx, asm_commands_n, return_err);
                 break;
             case POPR_COM:
-                write_pop_register(bin_code, asm_commands, &com_idx, asm_commands_n, return_err);
-                break;
-            case JMP_COM:
-                write_jump(bin_code, asm_commands, &com_idx, asm_commands_n, return_err);
-                break;
-            case LABEL_COM:
-                write_label(bin_code, asm_commands, &com_idx, asm_commands_n, return_err);
-                break;
-            case JA_COM:
-                write_ja(bin_code, asm_commands, &com_idx, asm_commands_n, return_err);
-                break;
-            case IN_COM:
-                write_simple_com(bin_code, &com_idx, IN_COM);
-                break;
-            case OUT_COM:
-                write_simple_com(bin_code, &com_idx, OUT_COM);
-                break;
-            case ADD_COM:
-                write_simple_com(bin_code, &com_idx, ADD_COM);
-                break;
-            case SUB_COM:
-                write_simple_com(bin_code, &com_idx, SUB_COM);
-                break;
-            case MULT_COM:
-                write_simple_com(bin_code, &com_idx, MULT_COM);
-                break;
-            case HLT_COM:
-                write_simple_com(bin_code, &com_idx, HLT_COM);
-                break;
-            case POP_COM:
-            write_simple_com(bin_code, &com_idx, POP_COM);
-            break;
-            case UNKNOWN_COM:
-                asm_add_err(return_err, ASM_ERR_SYNTAX);
-                debug("Unknown command: '%s'", asm_commands[com_idx]);
-                DEBUG_ERROR(ASM_ERR_SYNTAX);
-                break;
-            default:
-                break;
+
+            // default:
+            //     asm_add_err(return_err, ASM_ERR_SYNTAX);
+            //     DEBUG_ERROR(ASM_ERR_SYNTAX);
+            //     debug("Unknown command: '%s'", asm_commands[com_idx]);
+            //     return;
         }
 
-        if (*return_err != ASM_ERR_OK) {
-            debug("Prosesing error: '%s'", asm_commands[com_idx]);
-            DEBUG_ERROR(ASM_ERR_SYNTAX);
-            break;
+        if (strcmp(asm_commands[com_idx], "ja") == 0) {
+            bin_code[com_idx] = JA_COM;
+            com_idx++;
+            if (com_idx >= asm_commands_n) {
+                asm_add_err(return_err, ASM_ERR_SYNTAX);
+                DEBUG_ERROR(*return_err)
+                debug("JA hasn't required arg");
+                return;
+            }
+            if (check_label_elem(asm_commands[com_idx])) {
+                char label_name[max_label_name_sz] = {};
+
+                sscanf(asm_commands[com_idx], "%s", label_name);
+                int label_addr = get_label_addr_from_list(label_name);
+                if (label_addr == -1) {
+                    fix_up_table_add(com_idx, label_name);
+                    com_idx++;
+                    continue;
+                }
+
+                bin_code[com_idx++] = label_addr;
+                continue;
+            }
         }
+
+        if (strcmp(asm_commands[com_idx], "pop") == 0) {
+            bin_code[com_idx] = POP_COM;
+            com_idx++;
+            continue;
+        }
+
+        if (strcmp(asm_commands[com_idx], "in") == 0) {
+            bin_code[com_idx] = IN_COM;
+            com_idx++;
+            continue;
+        }
+
+        if (strcmp(asm_commands[com_idx], "out") == 0) {
+            bin_code[com_idx++] = OUT_COM;
+            continue;
+        }
+        if (strcmp(asm_commands[com_idx], "add") == 0) {
+            bin_code[com_idx++] = ADD_COM;
+            continue;
+        }
+        if (strcmp(asm_commands[com_idx], "sub") == 0) {
+            bin_code[com_idx++] = SUB_COM;
+            continue;
+        }
+        if (strcmp(asm_commands[com_idx], "mult") == 0) {
+            bin_code[com_idx++] = MULT_COM;
+            continue;
+        }
+        if (strcmp(asm_commands[com_idx], "hlt") == 0) {
+            bin_code[com_idx++] = HLT_COM;
+            continue;
+        }
+        if (check_label_elem(asm_commands[com_idx])) {
+            char label_name[max_label_name_sz] = {};
+            sscanf(asm_commands[com_idx], "%s", label_name);
+            add_label_to_list((int) com_idx, label_name);
+            bin_code[com_idx++] = LABEL_COM;
+            continue;
+        }
+
     }
 
     // IMPORTANT
