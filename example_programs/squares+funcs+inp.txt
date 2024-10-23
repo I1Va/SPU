@@ -1,3 +1,4 @@
+; input number of squares you want to see
 
 jmp END_FUNCTIONS_DEC:
 
