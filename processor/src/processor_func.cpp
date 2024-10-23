@@ -44,6 +44,7 @@ void execute_code(int code[], proc_err *return_err) {
 
     stk_err stk_last_err = STK_ERR_OK;
     stack_t stk = {}; STACK_INIT(&stk, 0, &stk_last_err);
+    stack_t call_stk = {}; STACK_INIT(&call_stk, 0, &stk_last_err);
 
     while (1) {
         com = code[ip++];
@@ -170,18 +171,39 @@ void execute_code(int code[], proc_err *return_err) {
         if (com == LABEL_COM) {
             continue;
         }
+
+        if (com == CALL_COM) {
+            stack_push(&call_stk, ip + 1, &stk_last_err);
+            int addr = code[ip++];
+            ip = addr;
+            continue;
+        }
+
+        if (com == RET_COM) {
+            int call_label = stack_pop(&call_stk, &stk_last_err);
+            ip = call_label;
+            continue;
+        }
+
         if (com == HLT_COM) {
             break;
         }
+
+
+
+
+
         proc_add_err(return_err, PROC_UNKNOWN_COM);
         if (*return_err != PROC_ERR_OK) {
             debug("proc_error: {%llu}", *return_err);
         }
         stack_destroy(&stk);
+        stack_destroy(&call_stk);
         return;
     }
 
     stack_destroy(&stk);
+    stack_destroy(&call_stk);
 
     return;
 }

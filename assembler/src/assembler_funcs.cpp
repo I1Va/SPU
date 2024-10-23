@@ -35,7 +35,7 @@ int get_reg_id(const char name[]) {
 
 const int DEFAULT_label_VALUE = -1;
 const size_t label_list_max_sz = 16;
-const size_t max_label_name_sz = 16;
+const size_t max_label_name_sz = 32;
 
 struct label_t
 {
@@ -129,7 +129,7 @@ bool check_label_elem(const char com[]) {
 
 com_t asm_com_list[] =
 {
-    {"push"  , PUSH_COM},
+    {"push"  , PUSH_COM}, // FIXME: вставить указатель на функции вызова
     {"pop"   , POP_COM},
     {"in"    , IN_COM},
     {"out"   , OUT_COM},
@@ -146,6 +146,8 @@ com_t asm_com_list[] =
     {"je"    , JE_COM},
     {"jne"   , JNE_COM},
     {"hlt"   , HLT_COM},
+    {"call"  , CALL_COM},
+    {"ret"   , RET_COM},
     {"LABEL:", LABEL_COM},
 };
 
@@ -425,6 +427,47 @@ void write_simple_com(int bin_code[], size_t *com_idx, const asm_coms_nums asm_n
     (*com_idx)++;
 }
 
+void write_call_com(int bin_code[], char asm_commands[][max_asm_command_size], size_t *com_idx,
+    const size_t asm_commands_n, asm_err *return_err)
+{
+    bin_code[*com_idx] = CALL_COM;
+    (*com_idx)++;
+
+    if (*com_idx >= asm_commands_n) {
+        asm_add_err(return_err, ASM_ERR_SYNTAX);
+        DEBUG_ERROR(*return_err)
+        debug("CALL hasn't required arg");
+        return;
+    }
+
+    if (check_label_elem(asm_commands[*com_idx])) {
+        char label_name[max_label_name_sz] = {};
+
+        sscanf(asm_commands[*com_idx], "%s", label_name);
+        int label_addr = get_label_addr_from_list(label_name);
+        if (label_addr == -1) {
+            fix_up_table_add(*com_idx, label_name);
+            (*com_idx)++;
+            return;
+        }
+
+        bin_code[*com_idx] = label_addr;
+        (*com_idx)++;
+        return;
+    }
+
+    char *end_ptr = NULL;
+    int num = (int) strtol(asm_commands[*com_idx], &end_ptr, 10);
+    if (*end_ptr != '\0') {
+        asm_add_err(return_err, ASM_ERR_SYNTAX);
+        DEBUG_ERROR(ASM_ERR_SYNTAX);
+        debug("Can't convert command arg to int. Arg: '%s'", asm_commands[*com_idx - 1]);
+        return;
+    }
+    bin_code[*com_idx] = num;
+    (*com_idx)++;
+}
+
 void asm_commands_translate(int bin_code[], char asm_commands[][max_asm_command_size],
         const size_t asm_commands_n, asm_err *return_err)
 {
@@ -441,7 +484,7 @@ void asm_commands_translate(int bin_code[], char asm_commands[][max_asm_command_
         // label_list_dump(stdout);
         // printf("\n");
         enum asm_coms_nums com_num = get_asm_com_num_from_list(asm_commands[com_idx]);
-        printf("command: '%s' : {%d}\n", asm_commands[com_idx], com_num);
+        // printf("command: '%s' : {%d}\n", asm_commands[com_idx], com_num);
 
         switch (com_num) {
             case PUSH_COM:
@@ -495,9 +538,15 @@ void asm_commands_translate(int bin_code[], char asm_commands[][max_asm_command_
             case HLT_COM:
                 write_simple_com(bin_code, &com_idx, HLT_COM);
                 break;
+            case RET_COM:
+                write_simple_com(bin_code, &com_idx, RET_COM);
+                break;
+            case CALL_COM:
+                write_call_com(bin_code, asm_commands, &com_idx, asm_commands_n, return_err);
+                break;
             case POP_COM:
-            write_simple_com(bin_code, &com_idx, POP_COM);
-            break;
+                write_simple_com(bin_code, &com_idx, POP_COM);
+                break;
             case UNKNOWN_COM:
                 asm_add_err(return_err, ASM_ERR_SYNTAX);
                 debug("Unknown command: '%s'", asm_commands[com_idx]);

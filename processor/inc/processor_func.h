@@ -24,6 +24,9 @@ enum asm_coms_nums
     JBE_COM = 15,
     JE_COM = 16,
     JNE_COM = 17,
+    CALL_COM = 18,
+    RET_COM = 19,
+
 
     HLT_COM = -1,
     UNKNOWN_COM = -2,

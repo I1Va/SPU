@@ -17,6 +17,7 @@ int main() {
         return EXIT_FAILURE;
     }
     int bin_code[max_bin_code_sz];
+
     asm_commands_translate(bin_code, asm_commands, asm_commands_n, &last_err);
 
     bin_code_write("./../bin_code.txt", bin_code, asm_commands_n, &last_err);
