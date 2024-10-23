@@ -17,9 +17,7 @@ int main() {
 
     size_t n_coms = bin_code_read("./../bin_code.txt", code, &proc_last_err);
 
-    fprintf(stdout, "\n------------------BIN_CODE-------------\n");
     fprintf_bin_code(stdout, code, n_coms);
-    fprintf(stdout, "---------------------------------------\n");
     execute_code(code, &proc_last_err);
 
     return EXIT_SUCCESS;

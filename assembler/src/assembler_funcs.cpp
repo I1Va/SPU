@@ -1,4 +1,5 @@
 #include <assert.h>
+#include <cstddef>
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -14,7 +15,6 @@ struct reg_t {
     const char *name;
 };
 
-
 reg_t reg_list[] = {
     {0, "AX"},
     {1, "BX"},
@@ -24,10 +24,62 @@ reg_t reg_list[] = {
 
 const size_t reg_list_sz = sizeof(reg_list) / sizeof(reg_t);
 
+const int DEFAULT_MARK_VALUE = -1;
+
 int get_reg_id(const char name[]) {
     for (size_t reg_idx = 0; reg_idx < reg_list_sz; reg_idx++) {
         if (strcmp(reg_list[reg_idx].name, name) == 0) {
             return reg_list[reg_idx].id;
+        }
+    }
+    return -1;
+}
+
+const size_t mark_list_max_sz = 16;
+
+const size_t max_mark_name_sz = 16;
+
+struct mark_t {
+    int addr;
+    char name[max_mark_name_sz];
+};
+
+
+
+size_t empty_mark_idx = 0;
+
+mark_t mark_list[mark_list_max_sz] = {};
+
+void mark_list_dump(FILE *stream) {
+    fprintf_title(stream, "MARK_LIST", '-', border_size);
+    fprintf(stream, "empty_mark_idx: {%lu}\n", empty_mark_idx);
+    for (size_t mark_idx = 0; mark_idx < empty_mark_idx; mark_idx++) {
+        fprintf(stream, "mark[%2lu]: '%10s' addr = %d\n", mark_idx, mark_list[mark_idx].name, mark_list[mark_idx].addr);
+    }
+    fprintf_border(stream, '-', border_size, true);
+}
+
+void fill_mark_list(int default_addr) {
+    for (size_t mark_idx = 0; mark_idx < mark_list_max_sz; mark_idx++) {
+        mark_list[mark_idx].addr = default_addr;
+    }
+}
+
+int add_mark_to_list(int addr, const char *name) {
+    assert(empty_mark_idx < mark_list_max_sz);
+
+    mark_list[empty_mark_idx].addr = addr;
+    strcpy(mark_list[empty_mark_idx].name, name);
+    empty_mark_idx++;
+
+    return (int) empty_mark_idx - 1;
+}
+
+int get_mark_addr_from_list(const char *name) {
+    for (size_t mark_idx = 0; mark_idx < empty_mark_idx; mark_idx++) {
+        // printf("cmp: '%s' vs '%s' = {%d}", mark_list[mark_idx].name, name, strcmp(mark_list[mark_idx].name, name));
+        if (strcmp(mark_list[mark_idx].name, name) == 0) {
+            return (int) mark_list[mark_idx].addr;
         }
     }
     return -1;
@@ -139,6 +191,23 @@ size_t asm_code_read(char asm_commands[][max_asm_command_size], const char path[
     return 0;
 }
 
+// bool get_rec_com_len(const char asm_com, const char fmt[]) {
+//         } else if (sscanf(asm_com, fmt, &mark, &len_rec_com)) {
+//         printf("len: {%d}, mark: %d, com: {%s}\n", len_rec_com, mark, asm_commands[com_idx]);
+//         com_idx++;
+//     }
+// }
+
+bool check_mark_elem(const char com[]) {
+    int len_rec_com = 0;
+    char mark[max_mark_name_sz] = {};
+    sscanf(com, "%s%n", mark, &len_rec_com);
+    if (mark[len_rec_com - 1] == ':') {
+        return true;
+    }
+    return false;
+}
+
 void asm_commands_translate(int bin_code[], char asm_commands[][max_asm_command_size],
         const size_t asm_commands_n, unsigned long long *return_err)
 {
@@ -146,9 +215,16 @@ void asm_commands_translate(int bin_code[], char asm_commands[][max_asm_command_
     assert(asm_commands != NULL);
     assert(return_err != NULL);
 
+    fill_mark_list(DEFAULT_MARK_VALUE);
+
     size_t com_idx = 0;
 
     while (com_idx < asm_commands_n) {
+        // printf("before com[%lu]: '%s'\n", com_idx, asm_commands[com_idx]);
+        // mark_list_dump(stdout);
+        // printf("\n");
+
+
         if (strcmp(asm_commands[com_idx], "push") == 0) {
             bin_code[com_idx] = PUSH_COM;
             com_idx++;
@@ -170,7 +246,10 @@ void asm_commands_translate(int bin_code[], char asm_commands[][max_asm_command_
             }
             bin_code[com_idx] = num;
             com_idx++;
-        } else if (strcmp(asm_commands[com_idx], "pushr") == 0) {
+            continue;
+        }
+
+        if (strcmp(asm_commands[com_idx], "pushr") == 0) {
             bin_code[com_idx] = PUSHR_COM;
             com_idx++;
 
@@ -194,7 +273,10 @@ void asm_commands_translate(int bin_code[], char asm_commands[][max_asm_command_
 
             bin_code[com_idx] = reg_id;
             com_idx++;
-        } else if (strcmp(asm_commands[com_idx], "popr") == 0) {
+            continue;
+        }
+
+        if (strcmp(asm_commands[com_idx], "popr") == 0) {
             bin_code[com_idx] = POPR_COM;
             com_idx++;
 
@@ -202,43 +284,90 @@ void asm_commands_translate(int bin_code[], char asm_commands[][max_asm_command_
             int reg_id = get_reg_id(reg_name);
             bin_code[com_idx] = reg_id;
             com_idx++;
+            continue;
         }
 
+        if (strcmp(asm_commands[com_idx], "jmp") == 0) {
+            bin_code[com_idx] = JMP_COM;
+            com_idx++;
+            if (com_idx >= asm_commands_n) {
+                *return_err |= ERR_SYNTAX;
+                DEBUG_ERROR(*return_err)
+                debug("push hasn't required arg");
+                return;
+            }
+            if (check_mark_elem(asm_commands[com_idx])) {
+                char mark_name[max_mark_name_sz] = {};
 
+                sscanf(asm_commands[com_idx], "%s", mark_name);
+                int mark_addr = get_mark_addr_from_list(mark_name);
+                if (mark_addr == -1) {
+                    *return_err |= ERR_SYNTAX;
+                    DEBUG_ERROR(ERR_SYNTAX);
+                    debug("Invalid mark: '%s'", mark_name);
+                    return;
+                }
 
-        else if (strcmp(asm_commands[com_idx], "pop") == 0) {
+                bin_code[com_idx++] = mark_addr;
+                continue;
+            }
+
+            char *end_ptr = NULL;
+            int num = (int) strtol(asm_commands[com_idx], &end_ptr, 10);
+            if (*end_ptr != '\0') {
+                *return_err |= ERR_SYNTAX;
+                DEBUG_ERROR(ERR_SYNTAX);
+                debug("Can't convert command arg to int. Arg: '%s'", asm_commands[com_idx - 1]);
+                return;
+            }
+            bin_code[com_idx++] = num;
+            continue;
+        }
+
+        if (strcmp(asm_commands[com_idx], "pop") == 0) {
             bin_code[com_idx] = POP_COM;
             com_idx++;
-        } else if (strcmp(asm_commands[com_idx], "in") == 0) {
+            continue;
+        }
+
+        if (strcmp(asm_commands[com_idx], "in") == 0) {
             bin_code[com_idx] = IN_COM;
             com_idx++;
-        } else if (strcmp(asm_commands[com_idx], "out") == 0) {
-            bin_code[com_idx] = OUT_COM;
-            com_idx++;
-        } else if (strcmp(asm_commands[com_idx], "add") == 0) {
-            bin_code[com_idx] = ADD_COM;
-            com_idx++;
-        } else if (strcmp(asm_commands[com_idx], "sub") == 0) {
-            bin_code[com_idx] = SUB_COM;
-            com_idx++;
-        } else if (strcmp(asm_commands[com_idx], "mult") == 0) {
-            bin_code[com_idx] = MULT_COM;
-            com_idx++;
-        } else if (strcmp(asm_commands[com_idx], "hlt") == 0) {
-            bin_code[com_idx] = HLT_COM;
-            com_idx++;
+            continue;
         }
 
-
-
-
-
-        else {
-            *return_err |= ERR_SYNTAX;
-            DEBUG_ERROR(ERR_SYNTAX);
-            debug("Unknown command: '%s'", asm_commands[com_idx]);
-            return;
+        if (strcmp(asm_commands[com_idx], "out") == 0) {
+            bin_code[com_idx++] = OUT_COM;
+            continue;
         }
+        if (strcmp(asm_commands[com_idx], "add") == 0) {
+            bin_code[com_idx++] = ADD_COM;
+            continue;
+        }
+        if (strcmp(asm_commands[com_idx], "sub") == 0) {
+            bin_code[com_idx++] = SUB_COM;
+            continue;
+        }
+        if (strcmp(asm_commands[com_idx], "mult") == 0) {
+            bin_code[com_idx++] = MULT_COM;
+            continue;
+        }
+        if (strcmp(asm_commands[com_idx], "hlt") == 0) {
+            bin_code[com_idx++] = HLT_COM;
+            continue;
+        }
+        if (check_mark_elem(asm_commands[com_idx])) {
+            char mark_name[max_mark_name_sz] = {};
+            sscanf(asm_commands[com_idx], "%s", mark_name);
+            add_mark_to_list((int) com_idx, mark_name);
+            bin_code[com_idx++] = MARK_COM;
+            continue;
+        }
+
+        *return_err |= ERR_SYNTAX;
+        DEBUG_ERROR(ERR_SYNTAX);
+        debug("Unknown command: '%s'", asm_commands[com_idx]);
+        return;
     }
 }
 

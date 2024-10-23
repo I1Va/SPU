@@ -10,7 +10,7 @@ typedef int stack_elem_t;
 #include "proc_err.h"
 
 const size_t reg_list_sz = 4;
-int reg_list[4] = {};
+int reg_list[reg_list_sz] = {};
 
 size_t bin_code_read(const char path[], int code[], proc_err *return_err) {
     size_t com_idx = 0;
@@ -62,6 +62,12 @@ void execute_code(int code[], proc_err *return_err) {
             reg_list[reg_id] = stack_pop(&stk, &stk_last_err);
             continue;
         }
+        if (com == JMP_COM) {
+            int addr = code[ip++];
+            ip = addr;
+            continue;
+        }
+
         if (com == IN_COM) {
             int argv = 0;
             scanf("%d", &argv);
@@ -97,11 +103,16 @@ void execute_code(int code[], proc_err *return_err) {
             stack_push(&stk, argv3, &stk_last_err);
             continue;
         }
+        if (com == MARK_COM) {
+            continue;
+        }
         if (com == HLT_COM) {
             break;
         }
         proc_add_err(return_err, PROC_ERR_SYNTAX);
-
+        if (*return_err != PROC_ERR_OK) {
+            debug("proc_error: {%llu}", *return_err);
+        }
         stack_destroy(&stk);
         return;
     }

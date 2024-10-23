@@ -1,17 +1,23 @@
+jmp no_spam:
 
-;pushr AX; Пушит в стэк значение регистра AX
-;popr BX; val = stack_pop; BX = val;
+;AAAA SPAM
+push 1;
+out;
+push 1;
+out;
+push 1;
+out;
+push 1;
+out;
+push 1;
+out;
+push 1;
+out;
+push 1;
+out;
+;SPAM ENDED
 
+no_spam:
 
-push 12;
-push 42;
-popr AX
-popr BX
-pushr BX
-out
-push 0
-out
-pushr AX
-out
-hlt
+hlt;
 

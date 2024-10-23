@@ -18,6 +18,8 @@ enum asm_coms_nums
     MULT_COM = 7,
     PUSHR_COM = 8,
     POPR_COM = 9,
+    JMP_COM = 10,
+    MARK_COM = 11,
 
     HLT_COM = -1,
 };
