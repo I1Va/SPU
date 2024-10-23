@@ -103,7 +103,7 @@ void execute_code(int code[], proc_err *return_err) {
             stack_push(&stk, argv3, &stk_last_err);
             continue;
         }
-        if (com == MARK_COM) {
+        if (com == LABEL_COM) {
             continue;
         }
         if (com == HLT_COM) {

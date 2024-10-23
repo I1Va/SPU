@@ -8,11 +8,11 @@
 const size_t max_bin_code_sz = 256;
 
 int main() {
-    unsigned long long last_err = ERR_OK;
+    asm_err last_err = ASM_ERR_OK;
     char asm_commands[max_asm_commands_n][max_asm_command_size] = {};
 
     size_t asm_commands_n = asm_code_read(asm_commands, "./../asm_code.txt", &last_err);
-    if (last_err != ERR_OK) {
+    if (last_err != ASM_ERR_OK) {
         DEBUG_ERROR(last_err);
         return EXIT_FAILURE;
     }
