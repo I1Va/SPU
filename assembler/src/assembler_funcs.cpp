@@ -110,15 +110,41 @@ void fix_up_table_pull_up(int bin_code[], asm_err *return_err) {
     }
 }
 
-// bool upd_reg(const char name[], const int value) {
-//     for (size_t reg_idx = 0; reg_idx < reg_list_sz; reg_idx++) {
-//         if (strcmp(reg_list[reg_idx].name, name) == 0) {
-//             reg_list[reg_idx].value = value;
-//             return true;
-//         }
-//     }
-//     return false;
-// }
+const size_t max_com_sz = 16;
+
+struct com_t {
+    const char com_name[max_com_sz];
+    enum asm_coms_nums com_num;
+};
+
+com_t asm_com_list[] =
+{
+    {"push" , PUSH_COM},
+    {"pop"  , POP_COM},
+    {"in"   , IN_COM},
+    {"out"  , OUT_COM},
+    {"add"  , ADD_COM},
+    {"sub"  , SUB_COM},
+    {"mult" , MULT_COM},
+    {"pushr", PUSHR_COM},
+    {"popr" , POPR_COM},
+    {"jmp"  , JMP_COM},
+    {"ja"   , JA_COM},
+    {"hlt"  , HLT_COM},
+};
+
+const size_t asm_com_list_sz = sizeof(asm_com_list) / sizeof(com_t);
+
+enum asm_coms_nums get_asm_com_num_from_list(const char name[]) {
+    assert(name != NULL);
+
+    for (size_t com_idx = 0; com_idx < asm_com_list_sz; com_idx++) {
+        if (strcmp(name, asm_com_list[com_idx].com_name) == 0) {
+            return asm_com_list[com_idx].com_num;
+        }
+    }
+    return UNKNOWN_COM;
+}
 
 bool asm_getline(FILE* stream, char line[], const size_t n) {
     assert(stream != NULL);

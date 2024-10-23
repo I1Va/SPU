@@ -24,6 +24,7 @@ enum asm_coms_nums
     JA_COM = 12,
 
     HLT_COM = -1,
+    UNKNOWN_COM = -2,
 };
 
 size_t asm_code_read(char asm_commands[][max_asm_command_size], const char path[], asm_err *return_err);
