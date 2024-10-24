@@ -10,11 +10,46 @@
 
 #include "./../general_output/inc/general_output.h"
 
+const int POISON_IMMC_VALUE = 0xBADBAD;
+
+const int DEFAULT_label_VALUE = -1;
+const size_t label_list_max_sz = 16;
+const size_t max_label_name_sz = 32;
+const size_t fix_up_table_max_sz = 16;
+const size_t max_com_sz = 16;
+const size_t register_max_sz = 8;
+
+struct com_t {
+    const char com_name[max_com_sz];
+    enum asm_coms_nums com_num;
+    void (*write_func)(int bin_code[], char asm_commands[][max_asm_command_size], size_t *bin_idx,
+        const size_t asm_commands_n, const enum asm_coms_nums com_num, asm_err *return_err);
+};
+
 struct reg_t
 {
     int id;
     const char *name;
 };
+
+struct label_t
+{
+    int addr;
+    char name[max_label_name_sz];
+};
+
+struct fix_up_obj_t
+{
+    size_t label_bin_code_idx;
+    char label_name[max_label_name_sz];
+};
+
+size_t empty_fix_up_idx = 0;
+fix_up_obj_t fix_up_table[fix_up_table_max_sz] = {};
+
+size_t empty_label_idx = 0;
+label_t label_list[label_list_max_sz] = {};
+
 reg_t reg_list[] =
 {
     {0, "AX"},
@@ -22,6 +57,7 @@ reg_t reg_list[] =
     {2, "CX"},
     {3, "DX"},
 };
+
 const size_t reg_list_sz = sizeof(reg_list) / sizeof(reg_t);
 
 int get_reg_id(const char name[]) {
@@ -32,18 +68,6 @@ int get_reg_id(const char name[]) {
     }
     return -1;
 }
-
-const int DEFAULT_label_VALUE = -1;
-const size_t label_list_max_sz = 16;
-const size_t max_label_name_sz = 32;
-
-struct label_t
-{
-    int addr;
-    char name[max_label_name_sz];
-};
-size_t empty_label_idx = 0;
-label_t label_list[label_list_max_sz] = {};
 
 void label_list_dump(FILE *stream) {
     fprintf_title(stream, "label_LIST", '-', border_size);
@@ -82,16 +106,6 @@ int get_label_addr_from_list(const char *name) {
     return -1;
 }
 
-struct fix_up_obj_t
-{
-    size_t label_bin_code_idx;
-    char label_name[max_label_name_sz];
-};
-
-const size_t fix_up_table_max_sz = 16;
-size_t empty_fix_up_idx = 0;
-fix_up_obj_t fix_up_table[fix_up_table_max_sz] = {};
-
 void fix_up_table_add(const size_t label_bin_code_idx, const char name[]) {
     assert(empty_fix_up_idx < fix_up_table_max_sz);
 
@@ -112,14 +126,10 @@ void fix_up_table_pull_up(int bin_code[], asm_err *return_err) {
     }
 }
 
-const size_t max_com_sz = 16;
 
-struct com_t {
-    const char com_name[max_com_sz];
-    enum asm_coms_nums com_num;
-    void (*write_func)(int bin_code[], char asm_commands[][max_asm_command_size], size_t *bin_idx,
-        const size_t asm_commands_n, const enum asm_coms_nums com_num, asm_err *return_err);
-};
+
+
+
 
 
 bool check_label_elem(const char com[]) {
@@ -181,6 +191,99 @@ void process_register(int bin_code[], char asm_commands[][max_asm_command_size],
     (*bin_idx)++;
 }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+const size_t string_merge_max_sz = 64;
+
+bool fmt_match(const char str[], const char fmt[]) {
+    char res[string_merge_max_sz] = {};
+    int rec_cnt = 0;
+    strcat(res, fmt);
+    strcat(res, "%n");
+
+    sscanf(str, res, &rec_cnt);
+
+    return rec_cnt == (int) strlen(str);
+}
+
+const int MASK_MEM  = 1 << 8;
+const int MASK_REG  = 1 << 7;
+const int MASK_IMMC = 1 << 6;
+
+
+struct arg_t {
+    int arg_mask;
+    int immc;
+    char reister_str[register_max_sz];
+    bool err;
+};
+
+arg_t parse_push_arg(const char arg_str[]) {
+    int scanned_chars = 0;
+    arg_t argv = {};
+
+    if (sscanf(arg_str, " [ %d ] %n", &argv.immc, &scanned_chars) == 1 && scanned_chars != 0) {
+        argv.arg_mask |= MASK_MEM | MASK_IMMC;
+        return argv;
+    }
+    argv = {};
+
+    if (sscanf(arg_str, " [ %[^] \t\n+] ] %n", argv.reister_str, &scanned_chars) == 1 && scanned_chars != 0) {
+        argv.arg_mask |= MASK_MEM + MASK_REG;
+        return argv;
+    }
+    argv = {};
+
+    if (sscanf(arg_str, " [ %[^] +\t] + %d ] %n", argv.reister_str, &argv.immc, &scanned_chars) == 2 && scanned_chars != 0) {
+        argv.arg_mask |= MASK_MEM | MASK_IMMC | MASK_REG;
+        return argv;
+    }
+    argv = {};
+
+    if (sscanf(arg_str, "%d%n", &argv.immc, &scanned_chars) == 1) {
+        argv.arg_mask |= MASK_IMMC;
+        return argv;
+    }
+    argv = {};
+
+    if (sscanf(arg_str, " %[^ \t\n+] + %d %n", argv.reister_str, &argv.immc, &scanned_chars) == 2) {
+        argv.arg_mask |= MASK_REG | MASK_IMMC;
+        return argv;
+    }
+    argv = {};
+
+    if (sscanf(arg_str, " %s %n", argv.reister_str, &scanned_chars) == 1) {
+        argv.arg_mask |= MASK_REG;
+        return argv;
+    }
+    argv = {};
+
+    argv.err = true;
+    return argv;
+}
+
+void fprintf_bin(FILE *stream, int mask) {
+    fprintf(stream, "bin[%d]: '", mask);
+    while (mask > 0) {
+        fprintf(stream, "%d", mask % 2);
+        mask /= 2;
+    }
+    fprintf(stream, "'\n");
+}
+
 void write_push(int bin_code[], char asm_commands[][max_asm_command_size], size_t *bin_idx,
     const size_t asm_commands_n, const enum asm_coms_nums com_num, asm_err *return_err)
 {
@@ -196,17 +299,22 @@ void write_push(int bin_code[], char asm_commands[][max_asm_command_size], size_
         return;
     }
 
-    char *end_ptr = NULL;
-    int num = (int) strtol(asm_commands[*bin_idx], &end_ptr, 10);
-    if (*end_ptr != '\0') {
+    arg_t argv = parse_push_arg(asm_commands[*bin_idx]);
+    printf("immc_argv: {%d}, reg_argv: {%s}, mem: {%d}\n", argv.immc, argv.reister_str, argv.arg_mask);
+
+    fprintf_bin(stdout, argv.arg_mask);
+    if (!(argv.arg_mask & MASK_IMMC)) {
         asm_add_err(return_err, ASM_ERR_SYNTAX);
         DEBUG_ERROR(ASM_ERR_SYNTAX);
-        debug("Can't convert command arg to int. Arg: '%s'", asm_commands[*bin_idx - 1]);
+        debug("Can't convert command arg to int. Arg: '%s'", asm_commands[*bin_idx]);
         return;
     }
-    bin_code[*bin_idx] = num;
+    bin_code[*bin_idx] = argv.immc;
     (*bin_idx)++;
 }
+
+
+
 
 void write_push_register(int bin_code[], char asm_commands[][max_asm_command_size], size_t *bin_idx,
     const size_t asm_commands_n, const enum asm_coms_nums com_num, asm_err *return_err)
@@ -231,9 +339,6 @@ void write_pop_register(int bin_code[], char asm_commands[][max_asm_command_size
 
     process_register(bin_code, asm_commands, bin_idx, asm_commands_n, return_err);
 }
-
-
-
 
 void write_jump(int bin_code[], char asm_commands[][max_asm_command_size], size_t *bin_idx,
     const size_t asm_commands_n, const enum asm_coms_nums com_num, asm_err *return_err)
