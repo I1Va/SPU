@@ -55,7 +55,7 @@ enum asm_coms_nums
     JNE_COM = 17,
     CALL_COM = 18,
     RET_COM = 19,
-
+    UPUSH_COM = 20,
 
     HLT_COM = -1,
     UNKNOWN_COM = -2,
