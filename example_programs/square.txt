@@ -161,16 +161,59 @@ draw_circle:
     draw;
     ret;
 
+draw_square:
+    upush 3 call get_width: div
+    upop BX;
+
+    upush 0;
+    upop CX;
+
+    upush 3 call get_height: div
+    upop AX;
+    cycle_AX_sq:
+        upush 3 call get_width: div
+        upop BX;
+        cycle_BX_sq:
+            upush AX;
+            call get_width:
+            mult;
+            upush BX;
+            add;
+            upop CX;
+
+            upush 35;
+            upop [CX];
+
+            upush 1;
+            upush BX;
+            add;
+            upop BX;
+
+            upush 3 call get_width: div upush 2 mult
+            upush BX;
+            jne cycle_BX_sq:
+
+
+
+        upush 1;
+        upush AX;
+        add;
+        upop AX;
+
+        upush 3 call get_height: div upush 2 mult
+        upush AX;
+        jne cycle_AX_sq:
+
+    ret;
+
 end_func_dec:
 
 upush 50;
 upop [6000];
 
-call get_height: call outN:
-call get_width: call outN: call new_line:;
-
 call fill_screen:
 
-call draw_circle:
-
+;call draw_circle:
+call draw_square:
+draw;
 hlt;

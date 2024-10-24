@@ -12,8 +12,11 @@ const int MASK_IMMC = 1 << 6;
 const int filter_mask = INT_MAX & ~MASK_IMMC & ~MASK_MEM & ~MASK_REG;
 
 
-const size_t CONSOLE_WIDTH = 50;
 const size_t CONSOLE_HEIGHT = 50;
+const size_t CONSOLE_WIDTH = CONSOLE_HEIGHT * 2;
+const size_t max_bin_code_sz = 1024;
+
+const size_t RAM_sz = CONSOLE_WIDTH * CONSOLE_HEIGHT + (1u << 20);
 
 enum asm_coms_nums
 {
@@ -43,6 +46,7 @@ enum asm_coms_nums
     UPOP_COM = 21,
     OUTC_COM = 22,
     DRAW_COM = 23,
+    DIV_COM  = 24,
 
 
     HLT_COM = INT_MAX & filter_mask,

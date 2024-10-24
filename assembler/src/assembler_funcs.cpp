@@ -532,6 +532,7 @@ com_t asm_com_list[] =
     {"call"  , CALL_COM, write_call_com},
     {"ret"   , RET_COM, write_simple_com},
     {"draw"  , DRAW_COM, write_simple_com},
+    {"div"  ,  DIV_COM, write_simple_com},
 
     {"upush" , UPUSH_COM, write_universal_push}, // RAW (TEST) VERSION
     {"upop" , UPOP_COM, write_universal_pop},
@@ -682,9 +683,10 @@ void asm_commands_translate(bin_code_t *bin_code, asm_code_t *asm_code, asm_err 
 
 
     while (asm_code->asm_idx < asm_code->code_sz) {
-        // printf("before com[%lu]: '%s'\n", bin_idx, asm_commands[bin_idx]);
+        // printf("before com[%lu]: '%s'\n", bin_code->bin_idx, asm_code->code[asm_code->asm_idx]);
         // label_list_dump(stdout);
         // printf("\n");
+        // char v = '@';
         printf("com: '%s', bin_idx: {%d}, asm_idx: {%d}\n", asm_code->code[asm_code->asm_idx], bin_code->bin_idx, asm_code->asm_idx);
         int asm_com_idx = get_bin_idx_from_list(asm_code->code[asm_code->asm_idx]);
         asm_coms_nums com_num = asm_com_list[asm_com_idx].com_num;

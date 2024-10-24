@@ -7,17 +7,14 @@
 #include "error_processing.h"
 
 const size_t max_asm_line_sz = 128;
-const size_t max_asm_command_size = 32;
-const size_t max_asm_commands_n = 128;
+const size_t max_asm_command_size = 64;
+const size_t max_asm_commands_n = 1024;
 const size_t label_list_max_sz = 16;
 const size_t max_label_name_sz = 32;
 const size_t fix_up_table_max_sz = 16;
 const size_t max_com_sz = 16;
 const size_t register_max_sz = 8;
-const size_t max_bin_code_sz = 256;
-
-const size_t CONSOLE_WIDTH = 50;
-const size_t CONSOLE_HEIGHT = 50;
+const size_t max_bin_code_sz = 1024;
 
 const int MASK_MEM  = 1 << 8;
 const int MASK_REG  = 1 << 7;
@@ -67,6 +64,7 @@ enum asm_coms_nums
     UPOP_COM = 21,
     OUTC_COM = 22,
     DRAW_COM = 23,
+    DIV_COM  = 24,
 
 
     HLT_COM = INT_MAX & filter_mask,

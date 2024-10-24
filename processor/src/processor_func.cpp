@@ -15,8 +15,6 @@ typedef int stack_elem_t;
 const size_t reg_list_sz = 4;
 int reg_list[reg_list_sz] = {};
 
-const size_t RAM_sz = 1 << 16;
-
 const stack_elem_t ACCURACY = 100;
 
 int RAM[RAM_sz] = {};
@@ -113,6 +111,7 @@ void execute_code(int code[], proc_err *return_err) {
     // fprintf_bin(stdout, filter_mask);
     while (1) {
         com = code[ip++];
+        // printf("com[%d]: '%d'\n", ip, com);
         // fprintf_bin(stdout, filter_mask & com);
         // printf("{%d} vs {%d}\n", com, filter_mask & com);
         int argv_sum = 0;
@@ -144,8 +143,10 @@ void execute_code(int code[], proc_err *return_err) {
                 reg_list[reg_id] = stack_pop(&stk, &stk_last_err);
                 break;
             case JMP_COM:
+                // printf("jump from {%d} to {%d}", ip, code[ip]);
                 addr = code[ip++];
                 ip = addr;
+
                 break;
             case JA_COM:
                 addr = code[ip++];
@@ -221,6 +222,13 @@ void execute_code(int code[], proc_err *return_err) {
                 argv1 = stack_pop(&stk, &stk_last_err);
                 argv2 = stack_pop(&stk, &stk_last_err);
                 argv3 = argv1 - argv2;
+
+                stack_push(&stk, argv3, &stk_last_err);
+                break;
+            case DIV_COM:
+                argv1 = stack_pop(&stk, &stk_last_err);
+                argv2 = stack_pop(&stk, &stk_last_err);
+                argv3 = argv1 / argv2;
 
                 stack_push(&stk, argv3, &stk_last_err);
                 break;
@@ -302,8 +310,7 @@ void execute_code(int code[], proc_err *return_err) {
                 hlt_state = true;
                 break;
             default:
-                debug("%d", INT_MAX);
-                debug("unknown command '%d' (tip: if com eq 0, you miss 'hlt')\n", com & filter_mask);
+                debug("ip = {%d}, unknown command '%d' (tip: if com eq 0, you miss 'hlt')\n", ip, com & filter_mask);
                 proc_add_err(return_err, PROC_UNKNOWN_COM);
                 break;
         }
