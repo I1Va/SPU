@@ -13,17 +13,12 @@
 const int POISON_IMMC_VALUE = 0xBADBAD;
 
 const int DEFAULT_label_VALUE = -1;
-const size_t label_list_max_sz = 16;
-const size_t max_label_name_sz = 32;
-const size_t fix_up_table_max_sz = 16;
-const size_t max_com_sz = 16;
-const size_t register_max_sz = 8;
+
 
 struct com_t {
     const char com_name[max_com_sz];
     enum asm_coms_nums com_num;
-    void (*write_func)(int bin_code[], char asm_commands[][max_asm_command_size], size_t *bin_idx,
-        const size_t asm_commands_n, const enum asm_coms_nums com_num, asm_err *return_err);
+    void (*write_func)(bin_code_t *bin_code, asm_code_t *asm_code, const enum asm_coms_nums com_num, asm_err *return_err);
 };
 
 struct reg_t
@@ -58,7 +53,28 @@ reg_t reg_list[] =
     {3, "DX"},
 };
 
+
 const size_t reg_list_sz = sizeof(reg_list) / sizeof(reg_t);
+
+
+
+asm_code_t asm_code_init() {
+    asm_code_t asm_code = {};
+
+    asm_code.asm_idx = 0;
+    asm_code.code_sz = max_asm_commands_n;
+    return asm_code;
+}
+
+bin_code_t bin_code_init() {
+    bin_code_t bin_code = {};
+
+    bin_code.bin_idx = 0;
+    bin_code.bin_code_sz = max_bin_code_sz;
+
+    return bin_code;
+}
+
 
 int get_reg_id(const char name[]) {
     for (size_t reg_idx = 0; reg_idx < reg_list_sz; reg_idx++) {
@@ -114,7 +130,7 @@ void fix_up_table_add(const size_t label_bin_code_idx, const char name[]) {
     empty_fix_up_idx++;
 }
 
-void fix_up_table_pull_up(int bin_code[], asm_err *return_err) {
+void fix_up_table_pull_up(bin_code_t *bin_code, asm_err *return_err) {
     for (size_t fix_idx = 0; fix_idx < empty_fix_up_idx; fix_idx++) {
         int label_addr = get_label_addr_from_list(fix_up_table[fix_idx].label_name);
         if (label_addr == -1) {
@@ -122,14 +138,9 @@ void fix_up_table_pull_up(int bin_code[], asm_err *return_err) {
             DEBUG_ERROR(ASM_ERR_INVALID_LABEL);
             debug("Invalid label : '%s'", fix_up_table[fix_idx].label_name);
         }
-        bin_code[fix_up_table[fix_idx].label_bin_code_idx] = label_addr;
+        bin_code->code[fix_up_table[fix_idx].label_bin_code_idx] = label_addr;
     }
 }
-
-
-
-
-
 
 
 bool check_label_elem(const char com[]) {
@@ -142,42 +153,44 @@ bool check_label_elem(const char com[]) {
     return false;
 }
 
-void process_label(int bin_code[], char asm_commands[][max_asm_command_size], size_t *bin_idx,
-    const size_t asm_commands_n, asm_err *return_err)
+void process_label(bin_code_t *bin_code, asm_code_t *asm_code, asm_err *return_err)
 {
-    if (*bin_idx >= asm_commands_n) {
+    assert(bin_code != NULL);
+    assert(asm_code != NULL);
+    assert(return_err != NULL);
+
+    if (asm_code->asm_idx >= asm_code->code_sz) {
         asm_add_err(return_err, ASM_ERR_SYNTAX);
         DEBUG_ERROR(*return_err)
         debug("bin_code overflow. Label isn't exist");
         return;
     }
-    if (check_label_elem(asm_commands[*bin_idx])) {
+    if (check_label_elem(asm_code->code[asm_code->asm_idx])) {
         char label_name[max_label_name_sz] = {};
 
-        sscanf(asm_commands[*bin_idx], "%s", label_name);
+        sscanf(asm_code->code[asm_code->asm_idx++], "%s", label_name);
         int label_addr = get_label_addr_from_list(label_name);
         if (label_addr == -1) {
-            fix_up_table_add(*bin_idx, label_name);
-            (*bin_idx)++;
+            fix_up_table_add(bin_code->bin_idx++, label_name);
             return;
         }
-        bin_code[*bin_idx] = label_addr;
-        (*bin_idx)++;
+        bin_code->code[bin_code->bin_idx++] = label_addr;
     }
 }
 
-void process_register(int bin_code[], char asm_commands[][max_asm_command_size], size_t *bin_idx,
-    const size_t asm_commands_n, asm_err *return_err)
+void process_register(bin_code_t *bin_code, asm_code_t *asm_code, asm_err *return_err)
 {
+    assert(bin_code != NULL);
+    assert(asm_code != NULL);
 
-    if (*bin_idx >= asm_commands_n) {
+    if (asm_code->asm_idx >= asm_code->code_sz) {
         asm_add_err(return_err, ASM_ERR_SYNTAX);
         DEBUG_ERROR(*return_err)
         debug("pushr hasn't required arg");
         return;
     }
 
-    const char *reg_name = asm_commands[*bin_idx];
+    const char *reg_name = asm_code->code[asm_code->asm_idx++];
     int reg_id = get_reg_id(reg_name);
 
     if (reg_id == -1) {
@@ -187,37 +200,11 @@ void process_register(int bin_code[], char asm_commands[][max_asm_command_size],
         return;
     }
 
-    bin_code[*bin_idx] = reg_id;
-    (*bin_idx)++;
+    bin_code->code[bin_code->bin_idx++] = reg_id;
 }
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-const size_t string_merge_max_sz = 64;
-
-bool fmt_match(const char str[], const char fmt[]) {
-    char res[string_merge_max_sz] = {};
-    int rec_cnt = 0;
-    strcat(res, fmt);
-    strcat(res, "%n");
-
-    sscanf(str, res, &rec_cnt);
-
-    return rec_cnt == (int) strlen(str);
-}
 
 const int MASK_MEM  = 1 << 8;
 const int MASK_REG  = 1 << 7;
@@ -284,153 +271,147 @@ void fprintf_bin(FILE *stream, int mask) {
     fprintf(stream, "'\n");
 }
 
-void write_push(int bin_code[], char asm_commands[][max_asm_command_size], size_t *bin_idx,
-    const size_t asm_commands_n, const enum asm_coms_nums com_num, asm_err *return_err)
+void write_push(bin_code_t *bin_code, asm_code_t *asm_code, const enum asm_coms_nums com_num, asm_err *return_err)
 {
     assert(bin_code != NULL);
-    assert(bin_idx != NULL);
+    assert(asm_code != NULL);
+    assert(return_err != NULL);
 
-    bin_code[*bin_idx] = PUSH_COM;
-    (*bin_idx)++;
-    if (*bin_idx >= asm_commands_n) {
+    bin_code->code[bin_code->bin_idx++] = PUSH_COM;
+    asm_code->asm_idx++;
+
+    if (asm_code->asm_idx >= asm_code->code_sz) {
         asm_add_err(return_err, ASM_ERR_SYNTAX);
         DEBUG_ERROR(*return_err)
-        debug("push hasn't required arg");
+        debug("push hasn't required arg {%d} {%d}", asm_code->asm_idx, asm_code->code_sz);
         return;
     }
 
-    arg_t argv = parse_push_arg(asm_commands[*bin_idx]);
+    arg_t argv = parse_push_arg(asm_code->code[asm_code->asm_idx++]); // REG IMMC
     printf("immc_argv: {%d}, reg_argv: {%s}, mem: {%d}\n", argv.immc, argv.reister_str, argv.arg_mask);
 
     fprintf_bin(stdout, argv.arg_mask);
+    fprintf_bin(stdout, MASK_IMMC);
+    fprintf_bin(stdout, (argv.arg_mask & MASK_IMMC));
     if (!(argv.arg_mask & MASK_IMMC)) {
         asm_add_err(return_err, ASM_ERR_SYNTAX);
         DEBUG_ERROR(ASM_ERR_SYNTAX);
-        debug("Can't convert command arg to int. Arg: '%s'", asm_commands[*bin_idx]);
+        debug("Can't convert command arg to int. Arg: '%s'", asm_code->code[asm_code->asm_idx]);
         return;
     }
-    bin_code[*bin_idx] = argv.immc;
-    (*bin_idx)++;
+    bin_code->code[bin_code->bin_idx++] = argv.immc;
 }
 
 
-
-
-void write_push_register(int bin_code[], char asm_commands[][max_asm_command_size], size_t *bin_idx,
-    const size_t asm_commands_n, const enum asm_coms_nums com_num, asm_err *return_err)
+void write_push_register(bin_code_t *bin_code, asm_code_t *asm_code, const enum asm_coms_nums com_num, asm_err *return_err)
 {
     assert(bin_code != NULL);
-    assert(bin_idx != NULL);
+    assert(asm_code != NULL);
+    assert(return_err != NULL);
 
-    bin_code[*bin_idx] = PUSHR_COM;
-    (*bin_idx)++;
+    bin_code->code[bin_code->bin_idx++] = PUSHR_COM;
+    asm_code->asm_idx++;
 
-    process_register(bin_code, asm_commands, bin_idx, asm_commands_n, return_err);
+    process_register(bin_code, asm_code, return_err);
 }
 
-void write_pop_register(int bin_code[], char asm_commands[][max_asm_command_size], size_t *bin_idx,
-    const size_t asm_commands_n, const enum asm_coms_nums com_num, asm_err *return_err)
+void write_pop_register(bin_code_t *bin_code, asm_code_t *asm_code, const enum asm_coms_nums com_num, asm_err *return_err)
 {
     assert(bin_code != NULL);
-    assert(bin_idx != NULL);
+    assert(asm_code != NULL);
+    assert(return_err != NULL);
 
-    bin_code[*bin_idx] = POPR_COM;
-    (*bin_idx)++;
+    bin_code->code[bin_code->bin_idx++] = POPR_COM;
+    asm_code->asm_idx++;
 
-    process_register(bin_code, asm_commands, bin_idx, asm_commands_n, return_err);
+    process_register(bin_code, asm_code, return_err);
 }
 
-void write_jump(int bin_code[], char asm_commands[][max_asm_command_size], size_t *bin_idx,
-    const size_t asm_commands_n, const enum asm_coms_nums com_num, asm_err *return_err)
+void write_jump(bin_code_t *bin_code, asm_code_t *asm_code, const enum asm_coms_nums com_num, asm_err *return_err)
 {
     assert(bin_code != NULL);
-    assert(bin_idx != NULL);
+    assert(asm_code != NULL);
+    assert(return_err != NULL);
 
-    bin_code[*bin_idx] = JMP_COM;
-    (*bin_idx)++;
+    bin_code->code[bin_code->bin_idx++] = JMP_COM;
+    asm_code->asm_idx++;
 
-    if (*bin_idx >= asm_commands_n) {
+    if (asm_code->asm_idx >= asm_code->code_sz) {
         asm_add_err(return_err, ASM_ERR_SYNTAX);
         DEBUG_ERROR(*return_err)
         debug("JMP hasn't required arg");
         return;
     }
 
-    process_label(bin_code, asm_commands, bin_idx, asm_commands_n, return_err);
+    process_label(bin_code, asm_code, return_err);
 }
 
-void write_label(int bin_code[], char asm_commands[][max_asm_command_size], size_t *bin_idx,
-    const size_t asm_commands_n, const enum asm_coms_nums com_num, asm_err *return_err)
+void write_label(bin_code_t *bin_code, asm_code_t *asm_code, const enum asm_coms_nums com_num, asm_err *return_err)
 {
     char label_name[max_label_name_sz] = {};
-    sscanf(asm_commands[*bin_idx], "%s", label_name);
+
+    sscanf(asm_code->code[asm_code->asm_idx++], "%s", label_name);
     if (get_label_addr_from_list(label_name) != -1) {
         *return_err = ASM_ERR_SYNTAX;
         DEBUG_ERROR(ASM_ERR_SYNTAX);
         debug("label redefenition: '%s'", label_name);
         return;
     }
-    add_label_to_list((int) *bin_idx, label_name);
-    bin_code[*bin_idx] = LABEL_COM;
-    (*bin_idx)++;
+
+    add_label_to_list((int) bin_code->bin_idx, label_name);
+    bin_code->code[bin_code->bin_idx++] = LABEL_COM;
 }
 
-void write_conditional_jmp(int bin_code[], char asm_commands[][max_asm_command_size], size_t *bin_idx,
-    const size_t asm_commands_n, const enum asm_coms_nums com_num, asm_err *return_err)
+void write_conditional_jmp(bin_code_t *bin_code, asm_code_t *asm_code, const enum asm_coms_nums com_num, asm_err *return_err)
 {
-    bin_code[*bin_idx] = com_num;
-    (*bin_idx)++;
+    bin_code->code[bin_code->bin_idx++] = com_num;
+    asm_code->asm_idx++;
 
-    process_label(bin_code, asm_commands, bin_idx, asm_commands_n, return_err);
-
+    process_label(bin_code, asm_code, return_err);
 }
 
-void write_simple_com(int bin_code[], char asm_commands[][max_asm_command_size], size_t *bin_idx,
-    const size_t asm_commands_n, const enum asm_coms_nums com_num, asm_err *return_err)
+void write_simple_com(bin_code_t *bin_code, asm_code_t *asm_code, const enum asm_coms_nums com_num, asm_err *return_err)
 {
-    bin_code[*bin_idx] = com_num;
-    (*bin_idx)++;
+    bin_code->code[bin_code->bin_idx++] = com_num;
+    asm_code->asm_idx++;
 }
 
-void write_call_com(int bin_code[], char asm_commands[][max_asm_command_size], size_t *bin_idx,
-    const size_t asm_commands_n, const enum asm_coms_nums com_num, asm_err *return_err)
+void write_call_com(bin_code_t *bin_code, asm_code_t *asm_code, const enum asm_coms_nums com_num, asm_err *return_err)
 {
-    bin_code[*bin_idx] = CALL_COM;
-    (*bin_idx)++;
+    bin_code->code[bin_code->bin_idx++] = CALL_COM;
+    asm_code->asm_idx++;
 
-    if (*bin_idx >= asm_commands_n) {
+    if (asm_code->asm_idx >= asm_code->code_sz) {
         asm_add_err(return_err, ASM_ERR_SYNTAX);
         DEBUG_ERROR(*return_err)
         debug("CALL hasn't required arg");
         return;
     }
 
-    if (check_label_elem(asm_commands[*bin_idx])) {
+    if (check_label_elem(asm_code->code[asm_code->asm_idx])) {
         char label_name[max_label_name_sz] = {};
 
-        sscanf(asm_commands[*bin_idx], "%s", label_name);
+        sscanf(asm_code->code[asm_code->asm_idx++], "%s", label_name);
         int label_addr = get_label_addr_from_list(label_name);
         if (label_addr == -1) {
-            fix_up_table_add(*bin_idx, label_name);
-            (*bin_idx)++;
+            fix_up_table_add(bin_code->bin_idx++, label_name);
             return;
         }
 
-        bin_code[*bin_idx] = label_addr;
-        (*bin_idx)++;
+        bin_code->code[bin_code->bin_idx++] = label_addr;
         return;
     }
 
-    char *end_ptr = NULL;
-    int num = (int) strtol(asm_commands[*bin_idx], &end_ptr, 10);
-    if (*end_ptr != '\0') {
-        asm_add_err(return_err, ASM_ERR_SYNTAX);
-        DEBUG_ERROR(ASM_ERR_SYNTAX);
-        debug("Can't convert command arg to int. Arg: '%s'", asm_commands[*bin_idx - 1]);
-        return;
-    }
-    bin_code[*bin_idx] = num;
-    (*bin_idx)++;
+    // char *end_ptr = NULL;
+    // int num = (int) strtol(asm_commands[*bin_idx], &end_ptr, 10);
+    // if (*end_ptr != '\0') {
+    //     asm_add_err(return_err, ASM_ERR_SYNTAX);
+    //     DEBUG_ERROR(ASM_ERR_SYNTAX);
+    //     debug("Can't convert command arg to int. Arg: '%s'", asm_commands[*bin_idx - 1]);
+    //     return;
+    // }
+    // bin_code[*bin_idx] = num;
+    // (*bin_idx)++;
 }
 
 com_t asm_com_list[] =
@@ -466,16 +447,14 @@ com_t asm_com_list[] =
 
 
 
-void asm_com_launch(const int asm_com_idx, int bin_code[], char asm_commands[][max_asm_command_size], size_t *bin_idx,
-    const size_t asm_commands_n, asm_err *return_err)
+void asm_com_launch(int asm_com_idx, bin_code_t *bin_code, asm_code_t *asm_code, const enum asm_coms_nums com_num, asm_err *return_err)
 {
     assert(bin_code != NULL);
-    assert(asm_commands != NULL);
-    assert(bin_idx != NULL);
+    assert(asm_code != NULL);
     assert(return_err != NULL);
 
     asm_coms_nums asm_com_num = asm_com_list[asm_com_idx].com_num;
-    asm_com_list[asm_com_idx].write_func(bin_code, asm_commands, bin_idx, asm_commands_n, asm_com_num, return_err);
+    asm_com_list[asm_com_idx].write_func(bin_code, asm_code, com_num, return_err);
 }
 
 const size_t asm_com_list_sz = sizeof(asm_com_list) / sizeof(com_t);
@@ -522,18 +501,18 @@ bool asm_getline(FILE* stream, char line[], const size_t n) {
     return write_state;
 }
 
-void fprint_asm_commands_list(FILE *stream, const char asm_commands[][max_asm_command_size], const size_t n_coms) {
+void fprint_asm_commands_list(FILE *stream, asm_code_t *asm_code) {
     fprintf_title(stream, "COMMANDS_LIST", '-', border_size);
     size_t line_content_len = 0;
 
-    for (size_t bin_idx = 0; bin_idx < n_coms; bin_idx++) {
-        size_t cur_len = strlen(asm_commands[bin_idx]);
+    for (size_t bin_idx = 0; bin_idx < asm_code->code_sz; bin_idx++) {
+        size_t cur_len = strlen(asm_code->code[bin_idx]);
         if (cur_len + line_content_len > border_size) {
             fputc('\n', stream);
             line_content_len = 0;
         }
         line_content_len += cur_len + 5;
-        fprintf(stream, "'%s'; ", asm_commands[bin_idx]);
+        fprintf(stream, "'%s'; ", asm_code->code[bin_idx]);
     }
 
     fputc('\n', stream);
@@ -541,10 +520,12 @@ void fprint_asm_commands_list(FILE *stream, const char asm_commands[][max_asm_co
     fputc('\n', stream);
 }
 
-size_t asm_code_read(char asm_commands[][max_asm_command_size], const char path[], asm_err *return_err) {
+asm_code_t asm_code_read(const char path[], asm_err *return_err) {
+    asm_code_t asm_code = asm_code_init();
+
     FILE *asm_file_ptr = fopen(path, "r");
 
-    size_t bin_idx = 0;
+    size_t asm_temp_idx = 0;
 
     if (asm_file_ptr == NULL) {
         asm_add_err(return_err, ASM_ERR_FILE_OPEN);
@@ -562,7 +543,7 @@ size_t asm_code_read(char asm_commands[][max_asm_command_size], const char path[
 
         int delta_ptr = 0;
         while (1) {
-            sscanf(cur_line_ptr, "%s%n", asm_commands[bin_idx], &delta_ptr);
+            sscanf(cur_line_ptr, "%s%n", asm_code.code[asm_temp_idx], &delta_ptr);
             if (!delta_ptr) {
                 break;
             }
@@ -573,51 +554,53 @@ size_t asm_code_read(char asm_commands[][max_asm_command_size], const char path[
                 CLEAR_MEMORY(exit_mark)
             }
 
-            bin_idx++;
+            asm_temp_idx++;
             cur_line_ptr += delta_ptr;
             delta_ptr = 0;
         }
     }
 
     fclose(asm_file_ptr);
-    fprint_asm_commands_list(stdout, asm_commands, bin_idx);
-    return bin_idx;
+    asm_code.code_sz = asm_temp_idx;
+
+    return asm_code;
 
     exit_mark:
     if (asm_file_ptr != NULL) {
         fclose(asm_file_ptr);
     }
-    return 0;
+    return asm_code;
 }
 
 
 
-void asm_commands_translate(int bin_code[], char asm_commands[][max_asm_command_size],
-        const size_t asm_commands_n, asm_err *return_err)
+void asm_commands_translate(bin_code_t *bin_code, asm_code_t *asm_code, asm_err *return_err)
 {
     assert(bin_code != NULL);
-    assert(asm_commands != NULL);
+    assert(asm_code != NULL);
     assert(return_err != NULL);
 
     fill_label_list(DEFAULT_label_VALUE);
 
-    size_t bin_idx = 0;
+    fprint_asm_commands_list(stdout, asm_code);
 
-    while (bin_idx < asm_commands_n) {
+
+    while (asm_code->asm_idx < asm_code->code_sz) {
         // printf("before com[%lu]: '%s'\n", bin_idx, asm_commands[bin_idx]);
         // label_list_dump(stdout);
         // printf("\n");
-        int asm_com_idx = get_bin_idx_from_list(asm_commands[bin_idx]);
+        printf("com: '%s', bin_idx: {%d}, asm_idx: {%d}\n", asm_code->code[asm_code->asm_idx], bin_code->bin_idx, asm_code->asm_idx);
+        int asm_com_idx = get_bin_idx_from_list(asm_code->code[asm_code->asm_idx]);
         asm_coms_nums com_num = asm_com_list[asm_com_idx].com_num;
         if (asm_com_idx == -1) {
             asm_add_err(return_err, ASM_ERR_SYNTAX);
-            debug("Unknown command: '%s'", asm_commands[bin_idx]);
+            debug("Unknown command: '%s'", asm_code->code[asm_code->asm_idx]);
             DEBUG_ERROR(ASM_ERR_SYNTAX);
             return;
         }
-        asm_com_launch(asm_com_idx, bin_code, asm_commands, &bin_idx, asm_commands_n, return_err);
+        asm_com_launch(asm_com_idx, bin_code, asm_code, com_num, return_err);
         if (*return_err != ASM_ERR_OK) {
-            debug("Prosesing error: '%s'", asm_commands[bin_idx]);
+            debug("Prosesing error: '%s'", asm_code->code[asm_code->asm_idx]);
             DEBUG_ERROR(ASM_ERR_SYNTAX);
             return;
         }
@@ -634,7 +617,7 @@ void asm_commands_translate(int bin_code[], char asm_commands[][max_asm_command_
     }
 }
 
-void bin_code_write(const char path[], int bin_code[], const size_t n_bin_coms, asm_err *return_err) {
+void bin_code_write(const char path[], bin_code_t bin_code, asm_err *return_err) {
     FILE *bin_code_file_ptr = fopen(path, "w");
     if (bin_code_file_ptr == NULL) {
         asm_add_err(return_err, ASM_ERR_SYNTAX);
@@ -642,7 +625,10 @@ void bin_code_write(const char path[], int bin_code[], const size_t n_bin_coms, 
         return;
     }
 
-    for (size_t bin_code_idx = 0; bin_code_idx < n_bin_coms; bin_code_idx++) {
-        fprintf(bin_code_file_ptr, "%d ", bin_code[bin_code_idx]);
+    for (size_t bin_code_idx = 0; bin_code_idx < bin_code.bin_code_sz; bin_code_idx++) {
+        fprintf(bin_code_file_ptr, "%d ", bin_code.code[bin_code_idx]);
+        if (bin_code.code[bin_code_idx] == HLT_COM) {
+            break;
+        }
     }
 }

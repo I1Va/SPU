@@ -7,6 +7,8 @@
 
 enum asm_coms_nums
 {
+    NULL_COM = 0,
+
     PUSH_COM = 1,
     POP_COM = 2,
     IN_COM = 3,
@@ -35,5 +37,7 @@ enum asm_coms_nums
 size_t bin_code_read(const char path[], int code[], proc_err *return_err);
 
 void execute_code(int code[], proc_err *return_err);
+
+size_t get_bin_code_real_sz(int bin_code[], const size_t n);
 
 #endif // PROCESSOR_FUNC_H

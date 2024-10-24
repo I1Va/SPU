@@ -9,15 +9,14 @@
 #include "proc_err.h"
 #include "proc_output.h"
 
-const size_t mx_code_sz = 128;
+const size_t max_bin_code_sz = 256; // FIXME: константа может расходиться с assembler
 
 int main() {
     proc_err proc_last_err = PROC_ERR_OK;
-    int code[mx_code_sz] = {};
+    int code[max_bin_code_sz] = {};
 
-    size_t n_coms = bin_code_read("./../bin_code.txt", code, &proc_last_err);
+    bin_code_read("./../bin_code.txt", code, &proc_last_err);
 
-    fprintf_bin_code(stdout, code, n_coms);
     execute_code(code, &proc_last_err);
 
     return EXIT_SUCCESS;

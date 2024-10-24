@@ -1,4 +1,5 @@
 #include "proc_err.h"
+#include <cstddef>
 #include <stdio.h>
 
 typedef int stack_elem_t;
@@ -12,8 +13,18 @@ typedef int stack_elem_t;
 const size_t reg_list_sz = 4;
 int reg_list[reg_list_sz] = {};
 
+size_t get_bin_code_real_sz(int bin_code[], const size_t n) {
+    for (size_t bin_code_idx = 0; bin_code_idx < n; bin_code_idx++) {
+        if (bin_code[bin_code_idx] == HLT_COM) {
+            return bin_code_idx + 1;
+        }
+    }
+    return n;
+}
+
 size_t bin_code_read(const char path[], int code[], proc_err *return_err) {
     size_t com_idx = 0;
+
 
     FILE *bin_code_file_ptr = fopen(path, "r");
     if (bin_code_file_ptr == NULL) {
@@ -48,6 +59,7 @@ void execute_code(int code[], proc_err *return_err) {
 
     while (1) {
         com = code[ip++];
+
         if (com == PUSH_COM) {
             int argv = code[ip++];
             stack_push(&stk, argv, &stk_last_err);
