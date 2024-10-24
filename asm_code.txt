@@ -1,8 +1,46 @@
-upush 77;
+jmp end_func_dec:
 
-upop [14];
+outN:
+    out;
+    call new_line:
+    ret
 
-upush [14];
-out;
+new_line:
+    upush 10;
+    outc;
+    ret
+
+print_sim:
+    upush 35;
+    outc;
+    call new_line:
+    ret;
+
+
+
+end_func_dec:
+
+upush 0;
+upop AX;
+
+upush 0;
+upop BX;
+
+cycle_AX:
+
+    upush 35;
+    upop [AX];
+
+    upush 1;
+    upush AX;
+    add;
+    upop AX;
+
+    upush 50;
+    upush AX;
+    jne cycle_AX:
+
+
+draw;
 
 hlt;

@@ -531,14 +531,12 @@ com_t asm_com_list[] =
     {"hlt"   , HLT_COM, write_simple_com},
     {"call"  , CALL_COM, write_call_com},
     {"ret"   , RET_COM, write_simple_com},
+    {"draw"  , DRAW_COM, write_simple_com},
 
     {"upush" , UPUSH_COM, write_universal_push}, // RAW (TEST) VERSION
     {"upop" , UPOP_COM, write_universal_pop},
     {"LABEL:", LABEL_COM, write_label}
 };
-
-
-
 
 
 

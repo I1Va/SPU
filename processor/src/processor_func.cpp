@@ -15,7 +15,9 @@ typedef int stack_elem_t;
 const size_t reg_list_sz = 4;
 int reg_list[reg_list_sz] = {};
 
-const size_t RAM_sz = 1024;
+const size_t RAM_sz = 1 << 16;
+
+const stack_elem_t ACCURACY = 100;
 
 int RAM[RAM_sz] = {};
 
@@ -92,6 +94,13 @@ void get_bit_str(int mask, char res_str[], const size_t n_bits) {
 
 
 
+// void stack_push_double(stack_t *stk, const double val, stk_err *return_err) {
+//     stack_push(stk, (int) (val * ACCURACY), return_err);
+// }
+
+// stack_elem_t stack_pop_double(stack_t *stk, stk_err *return_err) {
+//     return stack_pop(stk, return_err) / ACCURACY;
+// }
 
 void execute_code(int code[], proc_err *return_err) {
     int ip = 0;
@@ -107,6 +116,7 @@ void execute_code(int code[], proc_err *return_err) {
         // fprintf_bin(stdout, filter_mask & com);
         // printf("{%d} vs {%d}\n", com, filter_mask & com);
         int argv_sum = 0;
+        double double_argv = 0.0;
         int argv = 0;
         int argv1 = 0;
         int argv2 = 0;
@@ -188,9 +198,9 @@ void execute_code(int code[], proc_err *return_err) {
                 }
                 break;
             case IN_COM:
-                argv = 0;
-                scanf("%d", &argv);
-                stack_push(&stk, argv, &stk_last_err);
+                double_argv = 0;
+                scanf("%lg", &double_argv);
+                stack_push(&stk, double_argv, &stk_last_err);
                 break;
             case OUT_COM:
                 argv = stack_pop(&stk, &stk_last_err);
@@ -227,6 +237,14 @@ void execute_code(int code[], proc_err *return_err) {
                 stack_push(&call_stk, ip + 1, &stk_last_err);
                 addr = code[ip++];
                 ip = addr;
+                break;
+            case DRAW_COM:
+                for (size_t i = 0; i < CONSOLE_HEIGHT; i++) {
+                    for (size_t j = 0; j < CONSOLE_WIDTH; j++) {
+                        printf("%c", RAM[i * CONSOLE_WIDTH + j]);
+                    }
+                    printf("\n");
+                }
                 break;
             case RET_COM:
                 call_label = stack_pop(&call_stk, &stk_last_err);

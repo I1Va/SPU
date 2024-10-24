@@ -16,6 +16,9 @@ const size_t max_com_sz = 16;
 const size_t register_max_sz = 8;
 const size_t max_bin_code_sz = 256;
 
+const size_t CONSOLE_WIDTH = 50;
+const size_t CONSOLE_HEIGHT = 50;
+
 const int MASK_MEM  = 1 << 8;
 const int MASK_REG  = 1 << 7;
 const int MASK_IMMC = 1 << 6;
@@ -63,6 +66,7 @@ enum asm_coms_nums
     UPUSH_COM = 20,
     UPOP_COM = 21,
     OUTC_COM = 22,
+    DRAW_COM = 23,
 
 
     HLT_COM = INT_MAX & filter_mask,
