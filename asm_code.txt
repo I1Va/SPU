@@ -1,0 +1,8 @@
+upush 77;
+
+upop [14];
+
+upush [14];
+out;
+
+hlt;

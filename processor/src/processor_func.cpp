@@ -8,12 +8,16 @@ typedef int stack_elem_t;
 
 #include "./../stack/inc/stack_output.h"
 #include "./../stack/inc/error_processing.h"
-
+#include "./../stack/inc/stack_funcs.h"
 #include "processor_func.h"
 #include "proc_err.h"
 
 const size_t reg_list_sz = 4;
 int reg_list[reg_list_sz] = {};
+
+const size_t RAM_sz = 1024;
+
+int RAM[RAM_sz] = {};
 
 size_t get_bin_code_real_sz(int bin_code[], const size_t n) {
     for (size_t bin_code_idx = 0; bin_code_idx < n; bin_code_idx++) {
@@ -231,7 +235,16 @@ void execute_code(int code[], proc_err *return_err) {
 
             case UPUSH_COM:
                 if (com & MASK_MEM) {
-                    printf_red("THERE SHOULD BE UPUSH MEMORY PROCESSING\n");
+                    argv_sum = 0;
+                    if (com & MASK_REG) {
+                        reg_id = code[ip++];
+                        argv_sum += reg_list[reg_id];
+                    }
+                    if (com & MASK_IMMC) {
+                        argv = code[ip++];
+                        argv_sum += argv;
+                    }
+                    stack_push(&stk, RAM[argv_sum], &stk_last_err);
                 } else {
                     argv_sum = 0;
                     if (com & MASK_REG) {
@@ -247,7 +260,16 @@ void execute_code(int code[], proc_err *return_err) {
                 break;
             case UPOP_COM:
                 if (com & MASK_MEM) {
-                    printf_red("THERE SHOULD BE UPOP MEMORY PROCESSING\n");
+                    argv_sum = 0;
+                    if (com & MASK_REG) {
+                        reg_id = code[ip++];
+                        argv_sum += reg_list[reg_id];
+                    }
+                    if (com & MASK_IMMC) {
+                        argv = code[ip++];
+                        argv_sum += argv;
+                    }
+                    RAM[argv_sum] = stack_pop(&stk, &stk_last_err);
                 } else {
                     if (com & MASK_REG) {
                         reg_id = code[ip++];
