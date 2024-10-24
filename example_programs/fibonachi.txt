@@ -1,3 +1,25 @@
+jmp func_def_end:
+
+outN:
+    out;
+    call new_line:
+    ret
+
+new_line:
+    upush 10;
+    outc;
+    ret
+
+func_def_end:
+
+
+
+
+
+
+
+
+
 push 0;
 popr AX;
 
@@ -56,7 +78,7 @@ cycle: ; CYCLE_START
     jne cycle:
 
 pushr BX;
-out;
+call outN:
 
 
 exit:

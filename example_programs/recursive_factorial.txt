@@ -1,0 +1,54 @@
+jmp func_def_end:
+
+outN:
+    out;
+    call new_line:
+    ret
+
+new_line:
+    upush 10;
+    outc;
+    ret
+
+fact:
+    upush 0;
+    upush BX;
+
+    ja rec_base_end: ; if (BX <= 0)
+
+        ret;
+
+
+    rec_base_end:
+
+    upush BX;
+
+    upush 1;
+    upush BX;
+    sub;
+    popr BX;
+
+
+    call fact:
+
+    upush AX;
+    mult;
+    popr AX;
+
+    ret;
+
+func_def_end:
+
+in;
+popr BX;
+
+
+upush 1;
+popr AX;
+
+call fact:
+
+upush AX;
+out;
+
+hlt;

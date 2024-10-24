@@ -1,4 +1,6 @@
 #include "proc_err.h"
+#include <cassert>
+#include <climits>
 #include <cstddef>
 #include <stdio.h>
 
@@ -49,6 +51,42 @@ size_t bin_code_read(const char path[], int code[], proc_err *return_err) {
     return 0;
 }
 
+void fprintf_bin(FILE *stream, int mask) {
+    int start_mask = mask;
+
+    const size_t bit_len = sizeof(mask) * 8;
+    char res_str[bit_len + 1] = {};
+    size_t res_idx = 0;
+
+    char sims[] = "01";
+
+    while (mask > 0) {
+        res_str[res_idx++] = sims[mask % 2];
+        mask /= 2;
+    }
+    while (res_idx < bit_len) {
+        res_str[res_idx++] = '0';
+    }
+
+    fprintf(stream, "bin[%10d]: '%s'\n", start_mask, res_str);
+}
+
+void get_bit_str(int mask, char res_str[], const size_t n_bits) {
+    assert(res_str != NULL);
+
+    size_t res_idx = 0;
+
+    size_t cnt_chars = 0;
+    while (mask > 0 && res_idx < n_bits) {
+        res_str[res_idx++] = (char) (mask % 2) + '0';
+        mask /= 2;
+    }
+    while (res_idx < n_bits) {
+        res_str[res_idx++] = '0';
+    }
+}
+
+
 
 
 void execute_code(int code[], proc_err *return_err) {
@@ -58,9 +96,13 @@ void execute_code(int code[], proc_err *return_err) {
     stk_err stk_last_err = STK_ERR_OK;
     stack_t stk = {}; STACK_INIT(&stk, 0, &stk_last_err);
     stack_t call_stk = {}; STACK_INIT(&call_stk, 0, &stk_last_err);
-
+    // printf("filter_mask\n");
+    // fprintf_bin(stdout, filter_mask);
     while (1) {
         com = code[ip++];
+        // fprintf_bin(stdout, filter_mask & com);
+        // printf("{%d} vs {%d}\n", com, filter_mask & com);
+        int argv_sum = 0;
         int argv = 0;
         int argv1 = 0;
         int argv2 = 0;
@@ -73,7 +115,8 @@ void execute_code(int code[], proc_err *return_err) {
 
         bool hlt_state = false;
 
-        switch (com) {
+
+        switch (com & filter_mask) {
             case PUSH_COM:
                 argv = code[ip++];
                 stack_push(&stk, argv, &stk_last_err);
@@ -147,7 +190,11 @@ void execute_code(int code[], proc_err *return_err) {
                 break;
             case OUT_COM:
                 argv = stack_pop(&stk, &stk_last_err);
-                printf("%d\n", argv);
+                printf("%d", argv);
+                break;
+            case OUTC_COM:
+                argv = stack_pop(&stk, &stk_last_err);
+                printf("%c", argv);
                 break;
             case ADD_COM:
                 argv1 = stack_pop(&stk, &stk_last_err);
@@ -181,20 +228,57 @@ void execute_code(int code[], proc_err *return_err) {
                 call_label = stack_pop(&call_stk, &stk_last_err);
                 ip = call_label;
                 break;
+
+            case UPUSH_COM:
+                if (com & MASK_MEM) {
+                    printf_red("THERE SHOULD BE UPUSH MEMORY PROCESSING\n");
+                } else {
+                    argv_sum = 0;
+                    if (com & MASK_REG) {
+                        reg_id = code[ip++];
+                        argv_sum += reg_list[reg_id];
+                    }
+                    if (com & MASK_IMMC) {
+                        argv = code[ip++];
+                        argv_sum += argv;
+                    }
+                    stack_push(&stk, argv_sum, &stk_last_err);
+                }
+                break;
+            case UPOP_COM:
+                if (com & MASK_MEM) {
+                    printf_red("THERE SHOULD BE UPOP MEMORY PROCESSING\n");
+                } else {
+                    if (com & MASK_REG) {
+                        reg_id = code[ip++];
+                        reg_list[reg_id] = stack_pop(&stk, &stk_last_err);
+                    } else {
+                        stack_pop(&stk, &stk_last_err);
+                    }
+                }
+                break;
+
             case HLT_COM:
                 hlt_state = true;
                 break;
             default:
+                debug("%d", INT_MAX);
+                debug("unknown command '%d' (tip: if com eq 0, you miss 'hlt')\n", com & filter_mask);
                 proc_add_err(return_err, PROC_UNKNOWN_COM);
                 break;
         }
-
-
         if (*return_err != PROC_ERR_OK) {
             // DEBUG_ERROR(*return_err)
-            debug("proc_error: {%llu}", *return_err);
+            const size_t bit_len = sizeof(proc_err) * 8;
+            char bit_str[bit_len + 1] = {};
+            get_bit_str(*return_err, bit_str, bit_len);
+            debug("ip: {%d}, proc_error: %s", ip, bit_str);
+            stack_destroy(&stk);
+            stack_destroy(&call_stk);
             return;
         }
+
+
 
         if (hlt_state) {
             break;

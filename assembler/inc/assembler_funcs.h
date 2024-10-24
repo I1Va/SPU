@@ -2,6 +2,7 @@
 #define ASSEMBLER_FUNCS_H
 
 #include <stdio.h>
+#include <limits.h>
 
 #include "error_processing.h"
 
@@ -15,11 +16,14 @@ const size_t max_com_sz = 16;
 const size_t register_max_sz = 8;
 const size_t max_bin_code_sz = 256;
 
+const int MASK_MEM  = 1 << 8;
+const int MASK_REG  = 1 << 7;
+const int MASK_IMMC = 1 << 6;
+const int filter_mask = INT_MAX & ~MASK_IMMC & ~MASK_MEM & ~MASK_REG;
 
 struct bin_code_t {
     int code[max_bin_code_sz] = {};
     size_t bin_idx = 0;
-    size_t bin_code_sz = max_bin_code_sz;
 };
 
 struct asm_code_t {
@@ -55,13 +59,15 @@ enum asm_coms_nums
     JNE_COM = 17,
     CALL_COM = 18,
     RET_COM = 19,
+
     UPUSH_COM = 20,
+    UPOP_COM = 21,
+    OUTC_COM = 22,
 
-    HLT_COM = -1,
-    UNKNOWN_COM = -2,
+
+    HLT_COM = INT_MAX & filter_mask,
+    UNKNOWN_COM = 31,
 };
-
-
 
 asm_code_t asm_code_read(const char path[], asm_err *return_err);
 

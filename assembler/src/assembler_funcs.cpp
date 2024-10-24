@@ -70,7 +70,6 @@ bin_code_t bin_code_init() {
     bin_code_t bin_code = {};
 
     bin_code.bin_idx = 0;
-    bin_code.bin_code_sz = max_bin_code_sz;
 
     return bin_code;
 }
@@ -91,6 +90,25 @@ void label_list_dump(FILE *stream) {
     for (size_t label_idx = 0; label_idx < empty_label_idx; label_idx++) {
         fprintf(stream, "label[%2lu]: '%10s' addr = %d\n", label_idx, label_list[label_idx].name, label_list[label_idx].addr);
     }
+    fprintf_border(stream, '-', border_size, true);
+}
+
+void bin_code_dump(FILE *stream, bin_code_t bin_code) {
+    fprintf_title(stream, "BIN_CODE", '-', border_size);
+    fprintf(stream, "sz: {%lu}, last_idx: {%lu}\n", bin_code.bin_idx, bin_code.bin_idx);
+    size_t chars_cnt = 0;
+    for (size_t idx = 0; idx < bin_code.bin_idx; idx++) {
+        if (chars_cnt >= border_size) {
+            fprintf(stream, "\n");
+            chars_cnt = 0;
+        }
+        fprintf(stream, "%d ", bin_code.code[idx]);
+        const size_t buf_sz = 15;
+        char com_str[buf_sz];  // буфер, в которую запишем число
+        snprintf(com_str, buf_sz, "%d", bin_code.code[idx]);
+        chars_cnt += strlen(com_str) + 1;
+    }
+    fprintf(stream, "\n");
     fprintf_border(stream, '-', border_size, true);
 }
 
@@ -194,10 +212,6 @@ void write_register(bin_code_t *bin_code, const char register_str[], asm_err *re
     bin_code->code[bin_code->bin_idx++] = reg_id;
 }
 
-const int MASK_MEM  = 1 << 8;
-const int MASK_REG  = 1 << 7;
-const int MASK_IMMC = 1 << 6;
-
 
 struct arg_t {
     int arg_mask;
@@ -296,7 +310,7 @@ void write_universal_push(bin_code_t *bin_code, asm_code_t *asm_code, const enum
     if (asm_code->asm_idx >= asm_code->code_sz) {
         asm_add_err(return_err, ASM_ERR_SYNTAX);
         DEBUG_ERROR(*return_err)
-        debug("push hasn't required arg {%d} {%d}", asm_code->asm_idx, asm_code->code_sz);
+        debug("upush hasn't required arg {%d} {%d}", asm_code->asm_idx, asm_code->code_sz);
         return;
     }
 
@@ -308,13 +322,13 @@ void write_universal_push(bin_code_t *bin_code, asm_code_t *asm_code, const enum
         debug("Invalid arg: '%s'", asm_code->code[asm_code->asm_idx]);
         return;
     }
-    printf("immc_argv: {%d}, reg_argv: {%s}, mem: {%d}\n", argv.immc, argv.reister_str, argv.arg_mask);
+    // printf("immc_argv: {%d}, reg_argv: {%s}, mem: {%d}\n", argv.immc, argv.reister_str, argv.arg_mask);
 
-    fprintf_bin(stdout, argv.arg_mask);
-    fprintf_bin(stdout, MASK_IMMC);
-    fprintf_bin(stdout, (argv.arg_mask & MASK_IMMC));
+    // fprintf_bin(stdout, argv.arg_mask);
+    // fprintf_bin(stdout, MASK_IMMC);
+    // fprintf_bin(stdout, (argv.arg_mask & MASK_IMMC));
 
-    bin_code->code[bin_code->bin_idx++] = PUSH_COM | argv.arg_mask;
+    bin_code->code[bin_code->bin_idx++] = UPUSH_COM | argv.arg_mask;
     if (argv.arg_mask & MASK_REG) {
         write_register(bin_code, argv.reister_str, return_err);
     }
@@ -323,6 +337,48 @@ void write_universal_push(bin_code_t *bin_code, asm_code_t *asm_code, const enum
     }
 }
 
+void write_universal_pop(bin_code_t *bin_code, asm_code_t *asm_code, const enum asm_coms_nums com_num, asm_err *return_err) {
+    assert(bin_code != NULL);
+    assert(asm_code != NULL);
+    assert(return_err != NULL);
+
+    asm_code->asm_idx++;
+
+    if (asm_code->asm_idx >= asm_code->code_sz) {
+        asm_add_err(return_err, ASM_ERR_SYNTAX);
+        DEBUG_ERROR(*return_err)
+        debug("upop hasn't required arg {%d} {%d}", asm_code->asm_idx, asm_code->code_sz);
+        return;
+    }
+
+    arg_t argv = parse_push_arg(asm_code->code[asm_code->asm_idx++]); // REG IMMC
+
+    if (argv.err) {
+        asm_add_err(return_err, ASM_ERR_SYNTAX);
+        DEBUG_ERROR(ASM_ERR_SYNTAX);
+        debug("Invalid arg: '%s'", asm_code->code[asm_code->asm_idx]);
+        return;
+    }
+
+    //printf("immc_argv: {%d}, reg_argv: {%s}, mem: {%d}\n", argv.immc, argv.reister_str, argv.arg_mask);
+    // fprintf_bin(stdout, argv.arg_mask);
+    // fprintf_bin(stdout, MASK_IMMC);
+    // fprintf_bin(stdout, (argv.arg_mask & MASK_IMMC));
+
+    bin_code->code[bin_code->bin_idx++] = UPOP_COM | argv.arg_mask;
+    if (((argv.arg_mask & MASK_REG) && (argv.arg_mask & MASK_IMMC) && !(argv.arg_mask & MASK_MEM)) || \
+        (!(argv.arg_mask & MASK_REG) && (argv.arg_mask & MASK_IMMC) && !(argv.arg_mask & MASK_MEM))) {
+        asm_add_err(return_err, ASM_ERR_SYNTAX);
+        debug("upop invalid argv. (upop can't process only imc or imc+reg without mem)");
+        DEBUG_ERROR(ASM_ERR_SYNTAX)
+    }
+    if (argv.arg_mask & MASK_REG) {
+        write_register(bin_code, argv.reister_str, return_err);
+    }
+    if (argv.arg_mask & MASK_IMMC) {
+        bin_code->code[bin_code->bin_idx++] = argv.immc;
+    }
+}
 
 bool asm_end_idx(const asm_code_t *asm_code) {
     return asm_code->asm_idx >= asm_code->code_sz;
@@ -458,6 +514,7 @@ com_t asm_com_list[] =
     {"push"  , PUSH_COM, write_push}, // FIXME: вставить указатель на функции вызова
     {"pop"   , POP_COM, write_simple_com},
     {"in"    , IN_COM, write_simple_com},
+    {"outc"   , OUTC_COM, write_simple_com},
     {"out"   , OUT_COM, write_simple_com},
     {"add"   , ADD_COM, write_simple_com},
     {"sub"   , SUB_COM, write_simple_com},
@@ -476,7 +533,7 @@ com_t asm_com_list[] =
     {"ret"   , RET_COM, write_simple_com},
 
     {"upush" , UPUSH_COM, write_universal_push}, // RAW (TEST) VERSION
-
+    {"upop" , UPOP_COM, write_universal_pop},
     {"LABEL:", LABEL_COM, write_label}
 };
 
@@ -659,6 +716,7 @@ void asm_commands_translate(bin_code_t *bin_code, asm_code_t *asm_code, asm_err 
 }
 
 void bin_code_write(const char path[], bin_code_t bin_code, asm_err *return_err) {
+    bin_code_dump(stdout, bin_code);
     FILE *bin_code_file_ptr = fopen(path, "w");
     if (bin_code_file_ptr == NULL) {
         asm_add_err(return_err, ASM_ERR_SYNTAX);
@@ -666,9 +724,9 @@ void bin_code_write(const char path[], bin_code_t bin_code, asm_err *return_err)
         return;
     }
 
-    for (size_t bin_code_idx = 0; bin_code_idx < bin_code.bin_code_sz; bin_code_idx++) {
+    for (size_t bin_code_idx = 0; bin_code_idx < bin_code.bin_idx; bin_code_idx++) {
         fprintf(bin_code_file_ptr, "%d ", bin_code.code[bin_code_idx]);
-        if (bin_code.code[bin_code_idx] == HLT_COM) {
+        if ((bin_code.code[bin_code_idx] & filter_mask) == HLT_COM) {
             break;
         }
     }
