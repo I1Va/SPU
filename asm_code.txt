@@ -1,63 +1,42 @@
-push 0;
-popr AX;
+; input number of squares you want to see
 
-push 1;
+jmp END_FUNCTIONS_DEC:
+
+; FUNCTIONS
+
+NEXT_SQUARE_OUT:
+    pushr AX;
+    push 1;
+    add;
+    popr AX;
+
+    pushr AX;
+    pushr AX;
+    mult;
+    out;
+ret
+
+
+END_FUNCTIONS_DEC:
+
+in;
 popr BX;
 
-in; // ENTER FIBONACHI IDX
-popr DX;
-
-push 0;
-pushr DX;
-
-jb exit: ; DX < 0. NO FIBONACHI!:(
-
-pushr DX;
-push 0;
-jne end_if1:
-    pushr AX;
-    out;
-    jmp exit:
-end_if1:
-
-pushr DX;
-push 1;
-jne end_if2:
+cycle:
+    push 0;
     pushr BX;
-    out;
-    jmp exit:
-end_if2:
+    je exit_cycle:
 
-
-
-push 1;
-pushr DX;
-sub;
-popr DX;
-
-cycle: ; CYCLE_START
-    pushr AX;
-    pushr BX;
-    add;
-    popr CX; CX = AX + BX
-    pushr BX;
-    popr AX;
-    pushr CX;
-    popr BX;
+    call NEXT_SQUARE_OUT:
 
     push 1;
-    pushr DX;
-
+    pushr BX;
     sub;
-    popr DX;
+    popr BX;
 
-    pushr DX;
-    push 0;
-    jne cycle:
+    jmp cycle:
 
-pushr BX;
-out;
+exit_cycle:
 
 
-exit:
-hlt
+hlt;

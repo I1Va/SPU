@@ -142,7 +142,6 @@ void fix_up_table_pull_up(bin_code_t *bin_code, asm_err *return_err) {
     }
 }
 
-
 bool check_label_elem(const char com[]) {
     int len_rec_com = 0;
     char label[max_label_name_sz] = {};
@@ -178,33 +177,22 @@ void process_label(bin_code_t *bin_code, asm_code_t *asm_code, asm_err *return_e
     }
 }
 
-void process_register(bin_code_t *bin_code, asm_code_t *asm_code, asm_err *return_err)
+void process_register(bin_code_t *bin_code, const char register_str[], asm_err *return_err)
 {
     assert(bin_code != NULL);
-    assert(asm_code != NULL);
+    assert(register_str != NULL);
 
-    if (asm_code->asm_idx >= asm_code->code_sz) {
-        asm_add_err(return_err, ASM_ERR_SYNTAX);
-        DEBUG_ERROR(*return_err)
-        debug("pushr hasn't required arg");
-        return;
-    }
-
-    const char *reg_name = asm_code->code[asm_code->asm_idx++];
-    int reg_id = get_reg_id(reg_name);
+    int reg_id = get_reg_id(register_str);
 
     if (reg_id == -1) {
         asm_add_err(return_err, ASM_ERR_SYNTAX);
         DEBUG_ERROR(*return_err)
-        debug("invalid register name {%s}]", reg_name);
+        debug("invalid register name {%s}]", register_str);
         return;
     }
 
     bin_code->code[bin_code->bin_idx++] = reg_id;
 }
-
-
-
 
 const int MASK_MEM  = 1 << 8;
 const int MASK_REG  = 1 << 7;
@@ -288,11 +276,11 @@ void write_push(bin_code_t *bin_code, asm_code_t *asm_code, const enum asm_coms_
     }
 
     arg_t argv = parse_push_arg(asm_code->code[asm_code->asm_idx++]); // REG IMMC
-    printf("immc_argv: {%d}, reg_argv: {%s}, mem: {%d}\n", argv.immc, argv.reister_str, argv.arg_mask);
+    // printf("immc_argv: {%d}, reg_argv: {%s}, mem: {%d}\n", argv.immc, argv.reister_str, argv.arg_mask);
 
-    fprintf_bin(stdout, argv.arg_mask);
-    fprintf_bin(stdout, MASK_IMMC);
-    fprintf_bin(stdout, (argv.arg_mask & MASK_IMMC));
+    // fprintf_bin(stdout, argv.arg_mask);
+    // fprintf_bin(stdout, MASK_IMMC);
+    // fprintf_bin(stdout, (argv.arg_mask & MASK_IMMC));
     if (!(argv.arg_mask & MASK_IMMC)) {
         asm_add_err(return_err, ASM_ERR_SYNTAX);
         DEBUG_ERROR(ASM_ERR_SYNTAX);
@@ -302,6 +290,41 @@ void write_push(bin_code_t *bin_code, asm_code_t *asm_code, const enum asm_coms_
     bin_code->code[bin_code->bin_idx++] = argv.immc;
 }
 
+// void write_universal_push(bin_code_t *bin_code, asm_code_t *asm_code, const enum asm_coms_nums com_num, asm_err *return_err) {
+//     {
+//     assert(bin_code != NULL);
+//     assert(asm_code != NULL);
+//     assert(return_err != NULL);
+
+//     asm_code->asm_idx++;
+
+//     if (asm_code->asm_idx >= asm_code->code_sz) {
+//         asm_add_err(return_err, ASM_ERR_SYNTAX);
+//         DEBUG_ERROR(*return_err)
+//         debug("push hasn't required arg {%d} {%d}", asm_code->asm_idx, asm_code->code_sz);
+//         return;
+//     }
+
+//     arg_t argv = parse_push_arg(asm_code->code[asm_code->asm_idx++]); // REG IMMC
+
+//     if (argv.err) {
+//         asm_add_err(return_err, ASM_ERR_SYNTAX);
+//         DEBUG_ERROR(ASM_ERR_SYNTAX);
+//         debug("Invalid arg: '%s'", asm_code->code[asm_code->asm_idx]);
+//         return;
+//     }
+//     bin_code->code[bin_code->bin_idx++] = PUSH_COM | argv.arg_mask;
+//     if (argv.arg_mask | MASK_REG) {
+//         process_register(bin_code, asm_code_t *asm_code, asm_err *return_err)
+//         bin_code->code[bin_code->bin_idx++] = ;
+//     }
+
+// }
+// }
+
+bool asm_end_idx(const asm_code_t *asm_code) {
+    return asm_code->asm_idx >= asm_code->code_sz;
+}
 
 void write_push_register(bin_code_t *bin_code, asm_code_t *asm_code, const enum asm_coms_nums com_num, asm_err *return_err)
 {
@@ -312,7 +335,14 @@ void write_push_register(bin_code_t *bin_code, asm_code_t *asm_code, const enum 
     bin_code->code[bin_code->bin_idx++] = PUSHR_COM;
     asm_code->asm_idx++;
 
-    process_register(bin_code, asm_code, return_err);
+    if (asm_end_idx(asm_code)) {
+        asm_add_err(return_err, ASM_ERR_SYNTAX);
+        DEBUG_ERROR(ASM_ERR_SYNTAX);
+        debug("pushR tried get argv: asm_code overflow");
+        return;
+    }
+
+    process_register(bin_code, asm_code->code[asm_code->asm_idx++], return_err);
 }
 
 void write_pop_register(bin_code_t *bin_code, asm_code_t *asm_code, const enum asm_coms_nums com_num, asm_err *return_err)
@@ -324,7 +354,14 @@ void write_pop_register(bin_code_t *bin_code, asm_code_t *asm_code, const enum a
     bin_code->code[bin_code->bin_idx++] = POPR_COM;
     asm_code->asm_idx++;
 
-    process_register(bin_code, asm_code, return_err);
+    if (asm_end_idx(asm_code)) {
+        asm_add_err(return_err, ASM_ERR_SYNTAX);
+        DEBUG_ERROR(ASM_ERR_SYNTAX);
+        debug("popR tried to get argv: asm_code overflow");
+        return;
+    }
+
+    process_register(bin_code, asm_code->code[asm_code->asm_idx++], return_err);
 }
 
 void write_jump(bin_code_t *bin_code, asm_code_t *asm_code, const enum asm_coms_nums com_num, asm_err *return_err)
