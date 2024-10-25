@@ -32,7 +32,7 @@ size_t bin_code_read(const char path[], int code[], proc_err *return_err) {
     size_t com_idx = 0;
 
 
-    FILE *bin_code_file_ptr = fopen(path, "r");
+    FILE *bin_code_file_ptr = fopen(path, "rb");
     if (bin_code_file_ptr == NULL) {
         proc_add_err(return_err, PROC_ERR_FILE_OPEN);
         DEBUG_ERROR(STK_ERR_FILE_OPEN)
@@ -130,18 +130,6 @@ void execute_code(int code[], proc_err *return_err) {
 
 
         switch (com & filter_mask) {
-            case PUSH_COM:
-                argv = code[ip++];
-                stack_push(&stk, argv, &stk_last_err);
-                break;
-            case PUSHR_COM:
-                reg_id = code[ip++];
-                stack_push(&stk, reg_list[reg_id], &stk_last_err);
-                break;
-            case POPR_COM:
-                reg_id = code[ip++];
-                reg_list[reg_id] = stack_pop(&stk, &stk_last_err);
-                break;
             case JMP_COM:
                 // printf("jump from {%d} to {%d}", ip, code[ip]);
                 addr = code[ip++];
@@ -250,6 +238,8 @@ void execute_code(int code[], proc_err *return_err) {
                 for (size_t i = 0; i < CONSOLE_HEIGHT; i++) {
                     for (size_t j = 0; j < CONSOLE_WIDTH; j++) {
                         printf("%c", RAM[i * CONSOLE_WIDTH + j]);
+                        // printf("%c", RAM[i * CONSOLE_WIDTH + j]); // FIXME: чтобы круг был круглым, можно раскоментить эту строчку
+                        // т.е. кажду. клетку дублировать
                     }
                     printf("\n");
                 }
@@ -259,7 +249,7 @@ void execute_code(int code[], proc_err *return_err) {
                 ip = call_label;
                 break;
 
-            case UPUSH_COM:
+            case PUSH_COM:
                 if (com & MASK_MEM) {
                     argv_sum = 0;
                     if (com & MASK_REG) {
@@ -284,7 +274,7 @@ void execute_code(int code[], proc_err *return_err) {
                     stack_push(&stk, argv_sum, &stk_last_err);
                 }
                 break;
-            case UPOP_COM:
+            case POP_COM:
                 if (com & MASK_MEM) {
                     argv_sum = 0;
                     if (com & MASK_REG) {

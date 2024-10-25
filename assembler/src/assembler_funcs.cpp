@@ -273,33 +273,6 @@ void fprintf_bin(FILE *stream, int mask) {
     fprintf(stream, "'\n");
 }
 
-void write_push(bin_code_t *bin_code, asm_code_t *asm_code, const enum asm_coms_nums com_num, asm_err *return_err)
-{
-    assert(bin_code != NULL);
-    assert(asm_code != NULL);
-    assert(return_err != NULL);
-
-    bin_code->code[bin_code->bin_idx++] = PUSH_COM;
-    asm_code->asm_idx++;
-
-    if (asm_code->asm_idx >= asm_code->code_sz) {
-        asm_add_err(return_err, ASM_ERR_SYNTAX);
-        DEBUG_ERROR(*return_err)
-        debug("push hasn't required arg {%d} {%d}", asm_code->asm_idx, asm_code->code_sz);
-        return;
-    }
-
-    arg_t argv = parse_push_arg(asm_code->code[asm_code->asm_idx++]); // REG IMMC
-
-    if (!(argv.arg_mask & MASK_IMMC)) {
-        asm_add_err(return_err, ASM_ERR_SYNTAX);
-        DEBUG_ERROR(ASM_ERR_SYNTAX);
-        debug("Can't convert command arg to int. Arg: '%s'", asm_code->code[asm_code->asm_idx]);
-        return;
-    }
-    bin_code->code[bin_code->bin_idx++] = argv.immc;
-}
-
 void write_universal_push(bin_code_t *bin_code, asm_code_t *asm_code, const enum asm_coms_nums com_num, asm_err *return_err) {
     assert(bin_code != NULL);
     assert(asm_code != NULL);
@@ -310,7 +283,7 @@ void write_universal_push(bin_code_t *bin_code, asm_code_t *asm_code, const enum
     if (asm_code->asm_idx >= asm_code->code_sz) {
         asm_add_err(return_err, ASM_ERR_SYNTAX);
         DEBUG_ERROR(*return_err)
-        debug("upush hasn't required arg {%d} {%d}", asm_code->asm_idx, asm_code->code_sz);
+        debug("push hasn't required arg {%d} {%d}", asm_code->asm_idx, asm_code->code_sz);
         return;
     }
 
@@ -328,7 +301,7 @@ void write_universal_push(bin_code_t *bin_code, asm_code_t *asm_code, const enum
     // fprintf_bin(stdout, MASK_IMMC);
     // fprintf_bin(stdout, (argv.arg_mask & MASK_IMMC));
 
-    bin_code->code[bin_code->bin_idx++] = UPUSH_COM | argv.arg_mask;
+    bin_code->code[bin_code->bin_idx++] = PUSH_COM | argv.arg_mask;
     if (argv.arg_mask & MASK_REG) {
         write_register(bin_code, argv.reister_str, return_err);
     }
@@ -347,7 +320,7 @@ void write_universal_pop(bin_code_t *bin_code, asm_code_t *asm_code, const enum 
     if (asm_code->asm_idx >= asm_code->code_sz) {
         asm_add_err(return_err, ASM_ERR_SYNTAX);
         DEBUG_ERROR(*return_err)
-        debug("upop hasn't required arg {%d} {%d}", asm_code->asm_idx, asm_code->code_sz);
+        debug("pop hasn't required arg {%d} {%d}", asm_code->asm_idx, asm_code->code_sz);
         return;
     }
 
@@ -365,11 +338,11 @@ void write_universal_pop(bin_code_t *bin_code, asm_code_t *asm_code, const enum 
     // fprintf_bin(stdout, MASK_IMMC);
     // fprintf_bin(stdout, (argv.arg_mask & MASK_IMMC));
 
-    bin_code->code[bin_code->bin_idx++] = UPOP_COM | argv.arg_mask;
+    bin_code->code[bin_code->bin_idx++] = POP_COM | argv.arg_mask;
     if (((argv.arg_mask & MASK_REG) && (argv.arg_mask & MASK_IMMC) && !(argv.arg_mask & MASK_MEM)) || \
         (!(argv.arg_mask & MASK_REG) && (argv.arg_mask & MASK_IMMC) && !(argv.arg_mask & MASK_MEM))) {
         asm_add_err(return_err, ASM_ERR_SYNTAX);
-        debug("upop invalid argv. (upop can't process only imc or imc+reg without mem)");
+        debug("pop invalid argv. (pop can't process only imc or imc+reg without mem)");
         DEBUG_ERROR(ASM_ERR_SYNTAX)
     }
     if (argv.arg_mask & MASK_REG) {
@@ -382,44 +355,6 @@ void write_universal_pop(bin_code_t *bin_code, asm_code_t *asm_code, const enum 
 
 bool asm_end_idx(const asm_code_t *asm_code) {
     return asm_code->asm_idx >= asm_code->code_sz;
-}
-
-void write_push_register(bin_code_t *bin_code, asm_code_t *asm_code, const enum asm_coms_nums com_num, asm_err *return_err)
-{
-    assert(bin_code != NULL);
-    assert(asm_code != NULL);
-    assert(return_err != NULL);
-
-    bin_code->code[bin_code->bin_idx++] = PUSHR_COM;
-    asm_code->asm_idx++;
-
-    if (asm_end_idx(asm_code)) {
-        asm_add_err(return_err, ASM_ERR_SYNTAX);
-        DEBUG_ERROR(ASM_ERR_SYNTAX);
-        debug("pushR tried get argv: asm_code overflow");
-        return;
-    }
-
-    write_register(bin_code, asm_code->code[asm_code->asm_idx++], return_err);
-}
-
-void write_pop_register(bin_code_t *bin_code, asm_code_t *asm_code, const enum asm_coms_nums com_num, asm_err *return_err)
-{
-    assert(bin_code != NULL);
-    assert(asm_code != NULL);
-    assert(return_err != NULL);
-
-    bin_code->code[bin_code->bin_idx++] = POPR_COM;
-    asm_code->asm_idx++;
-
-    if (asm_end_idx(asm_code)) {
-        asm_add_err(return_err, ASM_ERR_SYNTAX);
-        DEBUG_ERROR(ASM_ERR_SYNTAX);
-        debug("popR tried to get argv: asm_code overflow");
-        return;
-    }
-
-    write_register(bin_code, asm_code->code[asm_code->asm_idx++], return_err);
 }
 
 void write_jump(bin_code_t *bin_code, asm_code_t *asm_code, const enum asm_coms_nums com_num, asm_err *return_err)
@@ -511,16 +446,12 @@ void write_call_com(bin_code_t *bin_code, asm_code_t *asm_code, const enum asm_c
 
 com_t asm_com_list[] =
 {
-    {"push"  , PUSH_COM, write_push}, // FIXME: вставить указатель на функции вызова
-    {"pop"   , POP_COM, write_simple_com},
     {"in"    , IN_COM, write_simple_com},
     {"outc"   , OUTC_COM, write_simple_com},
     {"out"   , OUT_COM, write_simple_com},
     {"add"   , ADD_COM, write_simple_com},
     {"sub"   , SUB_COM, write_simple_com},
     {"mult"  , MULT_COM, write_simple_com},
-    {"pushr" , PUSHR_COM, write_push_register},
-    {"popr"  , POPR_COM, write_pop_register},
     {"jmp"   , JMP_COM, write_jump},
     {"ja"    , JA_COM, write_conditional_jmp},
     {"jae"   , JAE_COM, write_conditional_jmp},
@@ -534,8 +465,9 @@ com_t asm_com_list[] =
     {"draw"  , DRAW_COM, write_simple_com},
     {"div"  ,  DIV_COM, write_simple_com},
 
-    {"upush" , UPUSH_COM, write_universal_push}, // RAW (TEST) VERSION
-    {"upop" , UPOP_COM, write_universal_pop},
+    {"push" , PUSH_COM, write_universal_push},
+    {"pop" , POP_COM, write_universal_pop},
+
     {"LABEL:", LABEL_COM, write_label}
 };
 
@@ -717,7 +649,7 @@ void asm_commands_translate(bin_code_t *bin_code, asm_code_t *asm_code, asm_err 
 
 void bin_code_write(const char path[], bin_code_t bin_code, asm_err *return_err) {
     bin_code_dump(stdout, bin_code);
-    FILE *bin_code_file_ptr = fopen(path, "w");
+    FILE *bin_code_file_ptr = fopen(path, "wb");
     if (bin_code_file_ptr == NULL) {
         asm_add_err(return_err, ASM_ERR_SYNTAX);
         DEBUG_ERROR(ASM_ERR_FILE_OPEN);
