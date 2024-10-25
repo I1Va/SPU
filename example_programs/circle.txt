@@ -164,7 +164,7 @@ draw_circle:
 end_func_dec:
 
 push 50;
-pop [6000];
+pop [6000]; FIXME: можно добавить новый регистр EX и писать это значение туда
 
 call get_height: call outN:
 call get_width: call outN: call new_line:;

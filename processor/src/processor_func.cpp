@@ -116,6 +116,7 @@ void execute_code(int code[], proc_err *return_err) {
         // printf("{%d} vs {%d}\n", com, filter_mask & com);
         int argv_sum = 0;
         double double_argv = 0.0;
+        double double_argv_sum = 0.0;
         int argv = 0;
         int argv1 = 0;
         int argv2 = 0;
@@ -138,32 +139,32 @@ void execute_code(int code[], proc_err *return_err) {
                 break;
             case JA_COM:
                 addr = code[ip++];
-                argv1 = stack_pop(&stk, &stk_last_err);
-                argv2 = stack_pop(&stk, &stk_last_err);
+                argv1 = stack_pop(&stk, &stk_last_err) / ACCURACY;
+                argv2 = stack_pop(&stk, &stk_last_err) / ACCURACY;
                 if (argv1 > argv2) {
                     ip = addr;
                 }
                 break;
             case JAE_COM:
                 addr = code[ip++];
-                argv1 = stack_pop(&stk, &stk_last_err);
-                argv2 = stack_pop(&stk, &stk_last_err);
+                argv1 = stack_pop(&stk, &stk_last_err) / ACCURACY;
+                argv2 = stack_pop(&stk, &stk_last_err) / ACCURACY;
                 if (argv1 >= argv2) {
                     ip = addr;
                 }
                 break;
             case JB_COM:
                 addr = code[ip++];
-                argv1 = stack_pop(&stk, &stk_last_err);
-                argv2 = stack_pop(&stk, &stk_last_err);
+                argv1 = stack_pop(&stk, &stk_last_err) / ACCURACY;
+                argv2 = stack_pop(&stk, &stk_last_err) / ACCURACY;
                 if (argv1 < argv2) {
                     ip = addr;
                 }
                 break;
             case JBE_COM:
                 addr = code[ip++];
-                argv1 = stack_pop(&stk, &stk_last_err);
-                argv2 = stack_pop(&stk, &stk_last_err);
+                argv1 = stack_pop(&stk, &stk_last_err) / ACCURACY;
+                argv2 = stack_pop(&stk, &stk_last_err) / ACCURACY;
                 // printf("argv1: {%d}, argv2: {%d}", argv1, argv2);
                 if (argv1 <= argv2) {
                     ip = addr;
@@ -171,16 +172,16 @@ void execute_code(int code[], proc_err *return_err) {
                 break;
             case JE_COM:
                 addr = code[ip++];
-                argv1 = stack_pop(&stk, &stk_last_err);
-                argv2 = stack_pop(&stk, &stk_last_err);
+                argv1 = stack_pop(&stk, &stk_last_err) / ACCURACY;
+                argv2 = stack_pop(&stk, &stk_last_err) / ACCURACY;
                 if (argv1 == argv2) {
                     ip = addr;
                 }
                 break;
             case JNE_COM:
                 addr = code[ip++];
-                argv1 = stack_pop(&stk, &stk_last_err);
-                argv2 = stack_pop(&stk, &stk_last_err);
+                argv1 = stack_pop(&stk, &stk_last_err) / ACCURACY;
+                argv2 = stack_pop(&stk, &stk_last_err) / ACCURACY;
                 // printf("argv1: {%d}, argv2: {%d}\n", argv1, argv2);
                 if (argv1 != argv2) {
                     ip = addr;
@@ -189,14 +190,15 @@ void execute_code(int code[], proc_err *return_err) {
             case IN_COM:
                 double_argv = 0;
                 scanf("%lg", &double_argv);
-                stack_push(&stk, double_argv, &stk_last_err);
+                stack_push(&stk, (stack_elem_t) (double_argv * ACCURACY), &stk_last_err);
                 break;
             case OUT_COM:
-                argv = stack_pop(&stk, &stk_last_err);
-                printf("%d", argv);
+                double_argv = 0;
+                double_argv = (double) stack_pop(&stk, &stk_last_err) / ACCURACY;
+                printf("%lg", double_argv);
                 break;
             case OUTC_COM:
-                argv = stack_pop(&stk, &stk_last_err);
+                argv = stack_pop(&stk, &stk_last_err) / ACCURACY;
                 printf("%c", argv);
                 break;
             case ADD_COM:
@@ -216,16 +218,16 @@ void execute_code(int code[], proc_err *return_err) {
             case DIV_COM:
                 argv1 = stack_pop(&stk, &stk_last_err);
                 argv2 = stack_pop(&stk, &stk_last_err);
-                argv3 = argv1 / argv2;
+                double_argv = (double) argv1 / argv2;
 
-                stack_push(&stk, argv3, &stk_last_err);
+                stack_push(&stk, (stack_elem_t) (double_argv * ACCURACY), &stk_last_err);
                 break;
             case MULT_COM:
                 argv1 = stack_pop(&stk, &stk_last_err);
                 argv2 = stack_pop(&stk, &stk_last_err);
-                argv3 = argv1 * argv2;
+                double_argv = argv1 * argv2;
 
-                stack_push(&stk, argv3, &stk_last_err);
+                stack_push(&stk, (stack_elem_t) (double_argv / ACCURACY), &stk_last_err);
                 break;
             case LABEL_COM:
                 break;
@@ -260,7 +262,7 @@ void execute_code(int code[], proc_err *return_err) {
                         argv = code[ip++];
                         argv_sum += argv;
                     }
-                    stack_push(&stk, RAM[argv_sum], &stk_last_err);
+                    stack_push(&stk, RAM[argv_sum] * ACCURACY, &stk_last_err);
                 } else {
                     argv_sum = 0;
                     if (com & MASK_REG) {
@@ -271,7 +273,7 @@ void execute_code(int code[], proc_err *return_err) {
                         argv = code[ip++];
                         argv_sum += argv;
                     }
-                    stack_push(&stk, argv_sum, &stk_last_err);
+                    stack_push(&stk, argv_sum * ACCURACY, &stk_last_err);
                 }
                 break;
             case POP_COM:
@@ -285,11 +287,11 @@ void execute_code(int code[], proc_err *return_err) {
                         argv = code[ip++];
                         argv_sum += argv;
                     }
-                    RAM[argv_sum] = stack_pop(&stk, &stk_last_err);
+                    RAM[argv_sum] = stack_pop(&stk, &stk_last_err) / ACCURACY;
                 } else {
                     if (com & MASK_REG) {
                         reg_id = code[ip++];
-                        reg_list[reg_id] = stack_pop(&stk, &stk_last_err);
+                        reg_list[reg_id] = stack_pop(&stk, &stk_last_err) / ACCURACY;
                     } else {
                         stack_pop(&stk, &stk_last_err);
                     }
