@@ -37,6 +37,7 @@ enum asm_coms_nums
     OUTC_COM = 22,
     DRAW_COM = 23,
     DIV_COM  = 24,
+    SQRT_COM = 25,
 
 
     HLT_COM = INT_MAX & filter_mask,

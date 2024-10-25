@@ -463,7 +463,8 @@ com_t asm_com_list[] =
     {"call"  , CALL_COM, write_call_com},
     {"ret"   , RET_COM, write_simple_com},
     {"draw"  , DRAW_COM, write_simple_com},
-    {"div"  ,  DIV_COM, write_simple_com},
+    {"div"   , DIV_COM, write_simple_com},
+    {"sqrt"  , SQRT_COM, write_simple_com},
 
     {"push" , PUSH_COM, write_universal_push},
     {"pop" , POP_COM, write_universal_pop},
@@ -658,7 +659,7 @@ void bin_code_write(const char path[], bin_code_t bin_code, asm_err *return_err)
 
     for (size_t bin_code_idx = 0; bin_code_idx < bin_code.bin_idx; bin_code_idx++) {
         fprintf(bin_code_file_ptr, "%d ", bin_code.code[bin_code_idx]);
-        if ((bin_code.code[bin_code_idx] & filter_mask) == HLT_COM) {
+        if (bin_code.code[bin_code_idx]== HLT_COM) { // FIXME: придумать более надежную систему остановки
             break;
         }
     }

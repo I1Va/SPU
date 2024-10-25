@@ -1,9 +1,10 @@
+#include "general.h"
 #include "proc_err.h"
 #include <cassert>
 #include <climits>
 #include <cstddef>
 #include <stdio.h>
-
+#include <math.h>
 typedef int stack_elem_t;
 
 #include "./../stack/inc/stack_output.h"
@@ -16,6 +17,7 @@ const size_t reg_list_sz = 4;
 int reg_list[reg_list_sz] = {};
 
 const stack_elem_t ACCURACY = 100;
+const stack_elem_t SQRT_ACCURACY = 10;
 
 int RAM[RAM_sz] = {};
 
@@ -190,11 +192,18 @@ void execute_code(int code[], proc_err *return_err) {
             case IN_COM:
                 double_argv = 0;
                 scanf("%lg", &double_argv);
+                // printf("push: {%d}", (stack_elem_t) (double_argv * ACCURACY));
                 stack_push(&stk, (stack_elem_t) (double_argv * ACCURACY), &stk_last_err);
+                // printf("pop: {%d}", stack_pop(&stk, &stk_last_err));
+
                 break;
             case OUT_COM:
                 double_argv = 0;
-                double_argv = (double) stack_pop(&stk, &stk_last_err) / ACCURACY;
+
+                //argv = stack_pop(&stk, &stk_last_err);
+                // printf("num: {%d}\n", argv);
+                double_argv = ((double) stack_pop(&stk, &stk_last_err)) / ACCURACY;
+
                 printf("%lg", double_argv);
                 break;
             case OUTC_COM:
@@ -221,6 +230,12 @@ void execute_code(int code[], proc_err *return_err) {
                 double_argv = (double) argv1 / argv2;
 
                 stack_push(&stk, (stack_elem_t) (double_argv * ACCURACY), &stk_last_err);
+                break;
+            case SQRT_COM:
+                double_argv = stack_pop(&stk, &stk_last_err);
+                double_argv = sqrt(double_argv);
+
+                stack_push(&stk, (stack_elem_t) (double_argv * SQRT_ACCURACY), &stk_last_err);
                 break;
             case MULT_COM:
                 argv1 = stack_pop(&stk, &stk_last_err);
@@ -251,7 +266,7 @@ void execute_code(int code[], proc_err *return_err) {
                 ip = call_label;
                 break;
 
-            case PUSH_COM:
+            case PUSH_COM: // WARNING: asm PUSH doesn't support fractional numbers. It recieve int, and push it * ACCURACY in stack
                 if (com & MASK_MEM) {
                     argv_sum = 0;
                     if (com & MASK_REG) {
@@ -262,7 +277,7 @@ void execute_code(int code[], proc_err *return_err) {
                         argv = code[ip++];
                         argv_sum += argv;
                     }
-                    stack_push(&stk, RAM[argv_sum] * ACCURACY, &stk_last_err);
+                    stack_push(&stk, RAM[argv_sum], &stk_last_err);
                 } else {
                     argv_sum = 0;
                     if (com & MASK_REG) {
@@ -271,9 +286,9 @@ void execute_code(int code[], proc_err *return_err) {
                     }
                     if (com & MASK_IMMC) {
                         argv = code[ip++];
-                        argv_sum += argv;
+                        argv_sum += argv * ACCURACY;
                     }
-                    stack_push(&stk, argv_sum * ACCURACY, &stk_last_err);
+                    stack_push(&stk, argv_sum, &stk_last_err);
                 }
                 break;
             case POP_COM:
@@ -287,11 +302,11 @@ void execute_code(int code[], proc_err *return_err) {
                         argv = code[ip++];
                         argv_sum += argv;
                     }
-                    RAM[argv_sum] = stack_pop(&stk, &stk_last_err) / ACCURACY;
+                    RAM[argv_sum] = stack_pop(&stk, &stk_last_err);
                 } else {
                     if (com & MASK_REG) {
                         reg_id = code[ip++];
-                        reg_list[reg_id] = stack_pop(&stk, &stk_last_err) / ACCURACY;
+                        reg_list[reg_id] = stack_pop(&stk, &stk_last_err);
                     } else {
                         stack_pop(&stk, &stk_last_err);
                     }
