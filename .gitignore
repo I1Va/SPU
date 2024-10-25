@@ -2,3 +2,4 @@ _docs
 *.o
 *.exe
 *.out
+*.d

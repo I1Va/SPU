@@ -6,13 +6,13 @@ outN:
     ret
 
 new_line:
-    upush 10;
+    push 10;
     outc;
     ret
 
 fact:
-    upush 0;
-    upush BX;
+    push 0;
+    push BX;
 
     ja rec_base_end: ; if (BX <= 0)
 
@@ -21,34 +21,34 @@ fact:
 
     rec_base_end:
 
-    upush BX;
+    push BX;
 
-    upush 1;
-    upush BX;
+    push 1;
+    push BX;
     sub;
-    popr BX;
+    pop BX;
 
 
     call fact:
 
-    upush AX;
+    push AX;
     mult;
-    popr AX;
+    pop AX;
 
     ret;
 
 func_def_end:
 
 in;
-popr BX;
+pop BX;
 
 
-upush 1;
-popr AX;
+push 1;
+pop AX;
 
 call fact:
 
-upush AX;
+push AX;
 out;
 
 hlt;

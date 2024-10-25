@@ -10,10 +10,7 @@
 
 #include "./../general_output/inc/general_output.h"
 
-const int POISON_IMMC_VALUE = 0xBADBAD;
-
 const int DEFAULT_label_VALUE = -1;
-
 
 struct com_t {
     const char com_name[max_com_sz];
@@ -53,10 +50,7 @@ reg_t reg_list[] =
     {3, "DX"},
 };
 
-
 const size_t reg_list_sz = sizeof(reg_list) / sizeof(reg_t);
-
-
 
 asm_code_t asm_code_init() {
     asm_code_t asm_code = {};

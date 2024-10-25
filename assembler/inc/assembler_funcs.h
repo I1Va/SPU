@@ -7,7 +7,7 @@
 #include "error_processing.h"
 #include "./../../binder_dir/bind_coms.h"
 
-const size_t max_asm_line_sz = 128;
+const size_t max_asm_line_sz = 1024;
 const size_t max_asm_command_size = 64;
 const size_t max_asm_commands_n = 1024;
 const size_t label_list_max_sz = 16;

@@ -252,9 +252,11 @@ void execute_code(int code[], proc_err *return_err) {
                 ip = addr;
                 break;
             case DRAW_COM:
+                // printf("H/W {%ld}, {%ld}", CONSOLE_HEIGHT, CONSOLE_WIDTH);
                 for (size_t i = 0; i < CONSOLE_HEIGHT; i++) {
                     for (size_t j = 0; j < CONSOLE_WIDTH; j++) {
-                        printf("%c", RAM[i * CONSOLE_WIDTH + j]);
+
+                        printf("%c", RAM[i * CONSOLE_WIDTH + j] / ACCURACY);
                         // printf("%c", RAM[i * CONSOLE_WIDTH + j]); // FIXME: чтобы круг был круглым, можно раскоментить эту строчку
                         // т.е. кажду. клетку дублировать
                     }
@@ -271,7 +273,7 @@ void execute_code(int code[], proc_err *return_err) {
                     argv_sum = 0;
                     if (com & MASK_REG) {
                         reg_id = code[ip++];
-                        argv_sum += reg_list[reg_id];
+                        argv_sum += reg_list[reg_id] / ACCURACY;
                     }
                     if (com & MASK_IMMC) {
                         argv = code[ip++];
@@ -296,7 +298,7 @@ void execute_code(int code[], proc_err *return_err) {
                     argv_sum = 0;
                     if (com & MASK_REG) {
                         reg_id = code[ip++];
-                        argv_sum += reg_list[reg_id];
+                        argv_sum += reg_list[reg_id] / ACCURACY;
                     }
                     if (com & MASK_IMMC) {
                         argv = code[ip++];

@@ -69,11 +69,11 @@ zero_root_tittle:
     ret;
 
 one_root_tittle:
-    push 116 push 111 push 111 push 114 push 95 push 101 push 110 push 111 outc outc outc outc outc outc outc outc
+    push 58 push 116 push 111 push 111 push 114 push 95 push 101 push 110 push 111 outc outc outc outc outc outc outc outc outc
     ret;
 
 two_root_tittle:
-    push 115 push 116 push 111 push 111 push 114 push 95 push 111 push 119 push 116 outc outc outc outc outc outc outc outc outc
+    push 58 push 115 push 116 push 111 push 111 push 114 push 95 push 111 push 119 push 116 outc outc outc outc outc outc outc outc outc outc
     ret;
 
 check_one_root:
