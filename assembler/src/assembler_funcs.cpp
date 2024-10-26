@@ -651,7 +651,5 @@ void bin_code_write(const char path[], bin_code_t bin_code, asm_err *return_err)
         return;
     }
 
-    for (size_t bin_code_idx = 0; bin_code_idx < bin_code.bin_idx; bin_code_idx++) {
-        fprintf(bin_code_file_ptr, "%d ", bin_code.code[bin_code_idx]);
-    }
+    fwrite(bin_code.code, sizeof(bin_code.code[0]), bin_code.bin_idx, bin_code_file_ptr);
 }

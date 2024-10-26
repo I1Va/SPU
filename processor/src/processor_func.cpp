@@ -1,9 +1,13 @@
 
+#include "general.h"
 #include "proc_err.h"
 #include <cassert>
 #include <climits>
 #include <cstddef>
 #include <stdio.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <unistd.h>
 #include <math.h>
 typedef int stack_elem_t;
 
@@ -12,6 +16,7 @@ typedef int stack_elem_t;
 #include "processor_func.h"
 #include "proc_output.h"
 #include "proc_err.h"
+
 
 const size_t reg_list_sz = 4;
 int reg_list[reg_list_sz] = {};
@@ -30,24 +35,42 @@ size_t get_bin_code_real_sz(int bin_code[], const size_t n) {
     return n;
 }
 
+size_t get_file_sz(const char *const path, proc_err *return_err) {
+    struct stat buf = {};
+    if (stat(path, &buf) != 0) {
+        proc_add_err(return_err, PROC_ERR_FILE_STAT);
+        DEBUG_ERROR(STK_ERR_STAT)
+        return 0;
+    }
+
+    return (size_t) buf.st_size;
+}
+
 size_t bin_code_read(const char path[], int code[], proc_err *return_err) {
     size_t com_idx = 0;
+    FILE *bin_code_file_ptr = NULL;
+    size_t bin_code_file_sz = 0;
+    size_t com_n = 0;
 
+    bin_code_file_sz = get_file_sz(path, return_err);
+    if (*return_err != PROC_ERR_OK) {
+        DEBUG_ERROR(STK_ERR_STAT);
+        CLEAR_MEMORY(exit_mark);
+    }
 
-    FILE *bin_code_file_ptr = fopen(path, "rb");
+    bin_code_file_ptr = fopen(path, "rb");
     if (bin_code_file_ptr == NULL) {
         proc_add_err(return_err, PROC_ERR_FILE_OPEN);
         DEBUG_ERROR(STK_ERR_FILE_OPEN)
         CLEAR_MEMORY(exit_mark)
     }
-
-    while (fscanf(bin_code_file_ptr, "%d", &code[com_idx]) != EOF) {
-        com_idx++;
-    }
+    printf("SIZE: %lu\n", bin_code_file_sz);
+    com_n = bin_code_file_sz / sizeof(code[0]);
+    fread(code, sizeof(code[0]), com_n, bin_code_file_ptr);
 
     fclose(bin_code_file_ptr);
 
-    return com_idx;
+    return com_n;
 
     exit_mark:
     if (bin_code_file_ptr != NULL) {
