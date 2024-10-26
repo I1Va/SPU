@@ -653,8 +653,5 @@ void bin_code_write(const char path[], bin_code_t bin_code, asm_err *return_err)
 
     for (size_t bin_code_idx = 0; bin_code_idx < bin_code.bin_idx; bin_code_idx++) {
         fprintf(bin_code_file_ptr, "%d ", bin_code.code[bin_code_idx]);
-        if (bin_code.code[bin_code_idx]== HLT_COM) { // FIXME: придумать более надежную систему остановки
-            break;
-        }
     }
 }

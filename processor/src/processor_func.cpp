@@ -1,4 +1,4 @@
-#include "general.h"
+
 #include "proc_err.h"
 #include <cassert>
 #include <climits>
@@ -7,10 +7,10 @@
 #include <math.h>
 typedef int stack_elem_t;
 
-#include "./../stack/inc/stack_output.h"
 #include "./../stack/inc/error_processing.h"
 #include "./../stack/inc/stack_funcs.h"
 #include "processor_func.h"
+#include "proc_output.h"
 #include "proc_err.h"
 
 const size_t reg_list_sz = 4;

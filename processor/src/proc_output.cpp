@@ -2,12 +2,10 @@
 #include <stdio.h>
 
 #include "proc_output.h"
-#include "./../stack/inc/stack_output.h"
-
-
 #include <stdio.h>
 #include "assert.h"
 #include <string.h>
+#include "proc_output.h"
 
 void fprintf_border(FILE* stream, const char bord_char, const size_t bord_sz, bool new_line) {
     for (size_t i = 0; i < bord_sz; i++) {

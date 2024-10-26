@@ -6,88 +6,88 @@ outN:
     ret
 
 new_line:
-    upush 10;
+    push 10;
     outc;
     ret
 
 get_height:
-    upush [6000]
+    push [6000]
     ret;
 
 get_width:
     call get_height:
-    upush 2;
+    push 2;
     mult;
     ret;
 
 
 print_sim:
-    upush 35;
+    push 35;
     outc;
     call new_line:
     ret;
 
 fill_screen:
 
-    upush 0;
-    upop BX;
+    push 0;
+    pop BX;
 
-    upush 0;
-    upop CX;
+    push 0;
+    pop CX;
 
-    upush 0;
-    upop AX;
+    push 0;
+    pop AX;
     cycle_AX:
-        upush 0;
-        upop BX;
+        push 0;
+        pop BX;
 
 
 
         cycle_BX:
-            upush AX;
+            push AX;
             call get_width:
             mult;
-            upush BX;
+            push BX;
             add;
-            upop CX;
+            pop CX;
 
-            upush 46;
-            upop [CX];
+            push 46;
+            pop [CX];
 
-            upush 1;
-            upush BX;
+            push 1;
+            push BX;
             add;
-            upop BX;
+            pop BX;
 
             call get_width:
-            upush BX;
+            push BX;
             jne cycle_BX:
 
 
 
-        upush 1;
-        upush AX;
+        push 1;
+        push AX;
         add;
-        upop AX;
+        pop AX;
 
         call get_height:
-        upush AX;
+        push AX;
         jne cycle_AX:
 
     ret;
 
 draw_circle:
-    upush 0;
-    upop BX;
+    push 0;
+    pop BX;
 
-    upush 0;
-    upop CX;
+    push 0;
+    pop CX;
 
-    upush 0;
-    upop AX;
+    push 0;
+    pop AX;
     cycle_AX_draw:
-        upush 0;
-        upop BX;
+        push 0;
+        pop BX;
         cycle_BX_draw:
 
 
@@ -95,121 +95,131 @@ draw_circle:
 
             ;if (AX - h/2)^2 + (BX - w/2) ^ 2 <= RAD^2
 
-            upush 0;
-            upop DX;
+            push 0;
+            pop DX;
 
-            upush 2 call get_height: div
-            upush AX;
+            push 2 call get_height: div
+            push AX;
             sub;
-            upop DX;
-            upush DX;
-            upush DX;
+            pop DX;
+            push DX;
+            push DX;
             mult;
 
-            upush 2 call get_width: div
-            upush BX;
+            push 2 call get_width: div
+            push BX;
             sub;
-            upop DX;
-            upush DX;
-            upush DX;
+            pop DX;
+            push DX;
+            push DX;
             mult;
 
 
             add;
-            upop DX;
+            pop DX;
 
-            upush 300; RADIUS^2
-            upush DX;
+            push 300; RADIUS^2
+            push DX;
 
 
 
             ja end_draw_if:
 
-                upush AX;
+                push AX;
                 call get_width:
                 mult;
-                upush BX;
+                push BX;
                 add;
-                upop CX;
+                pop CX;
 
 
-                upush 64;
-                upop [CX];
+                push 64;
+                pop [CX];
             end_draw_if:
 
 
 
 
-            upush 1;
-            upush BX;
+            push 1;
+            push BX;
             add;
-            upop BX;
+            pop BX;
 
             call get_width:
-            upush BX;
+            push BX;
             jne cycle_BX_draw:
 
-        upush 1;
-        upush AX;
+        push 1;
+        push AX;
         add;
-        upop AX;
+        pop AX;
 
         call get_height:
-        upush AX;
+        push AX;
         jne cycle_AX_draw:
 
     draw;
     ret;
 
 draw_square:
-    upush 3 call get_width: div
-    upop BX;
+    push 3 call get_width: div
+    pop BX;
 
-    upush 0;
-    upop CX;
+    push 0;
+    pop CX;
 
-    upush 3 call get_height: div
-    upop AX;
+    push [6001]
+    pop AX;
     cycle_AX_sq:
-        upush 3 call get_width: div
-        upop BX;
+        push [6002]
+        pop BX;
+
         cycle_BX_sq:
-            upush AX;
+            push AX;
             call get_width:
             mult;
-            upush BX;
+            push BX;
             add;
-            upop CX;
+            pop CX;
 
-            upush 35;
-            upop [CX];
+            push 35;
+            pop [CX];
 
-            upush 1;
-            upush BX;
+            push 1;
+            push BX;
             add;
-            upop BX;
+            pop BX;
 
-            upush 3 call get_width: div upush 2 mult
-            upush BX;
+            push [6002] push 2 mult
+            push BX;
             jne cycle_BX_sq:
 
 
 
-        upush 1;
-        upush AX;
+        push 1;
+        push AX;
         add;
-        upop AX;
+        pop AX;
 
-        upush 3 call get_height: div upush 2 mult
-        upush AX;
+        push [6001] push 2 mult
+        push AX;
         jne cycle_AX_sq:
 
     ret;
 
 end_func_dec:
 
-upush 50;
-upop [6000];
+push 50;
+pop [6000];
+
+
+push 17;
+pop [6001];
+
+push 34;
+pop [6002];
+
+push 20;
 
 call fill_screen:
 

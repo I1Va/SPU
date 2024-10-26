@@ -10,114 +10,167 @@ new_line:
     outc;
     ret
 
-get_discr:
-    push AX;
-    push CX;
-    push 4;
-    mult;
-    mult;
-
-    push BX;
-    push BX;
-    mult;
-
-    sub;
-
-    ret
-
-get_first_root:
-    push 2;
-    push AX;
-    mult
-
-    push BX;
-    push -1;
-    mult;
-    call get_discr: sqrt
-    add;
-    div;
-    ret
-
-
-get_second_root:
-
-    push 2;
-    push AX;
-    mult;
-
-    call get_discr: sqrt
-    push BX;
-    push -1;
-    mult;
-    sub;
-    div;
+get_height:
+    push [6000]
     ret;
 
-check_zero_root:
-    call get_discr:
-    push 0
+get_width:
+    call get_height:
+    push 2;
+    mult;
+    ret;
 
-    jbe get_zero_root_if_end:
-        push 1;
-        ret;
-    get_zero_root_if_end:
+
+print_sim:
+    push 35;
+    outc;
+    call new_line:
+    ret;
+
+fill_screen:
+
     push 0;
+    pop BX;
+
+    push 0;
+    pop CX;
+
+    push 0;
+    pop AX;
+    cycle_AX:
+        push 0;
+        pop BX;
+
+
+
+        cycle_BX:
+            push AX;
+            call get_width:
+            mult;
+            push BX;
+            add;
+            pop CX;
+
+            push 46;
+            pop [CX];
+
+            push 1;
+            push BX;
+            add;
+            pop BX;
+
+            call get_width:
+            push BX;
+            jne cycle_BX:
+
+
+
+        push 1;
+        push AX;
+        add;
+        pop AX;
+
+        call get_height:
+        push AX;
+        jne cycle_AX:
+
     ret;
 
-zero_root_tittle:
-    push 33 push 115 push 116 push 111 push 111 push 114 push 95 push 111 push 110 outc outc outc outc outc outc outc outc outc
-    ret;
+draw_circle:
+    push 0;
+    pop BX;
 
-one_root_tittle:
-    push 58 push 116 push 111 push 111 push 114 push 95 push 101 push 110 push 111 outc outc outc outc outc outc outc outc outc
-    ret;
+    push 0;
+    pop CX;
 
-two_root_tittle:
-    push 58 push 115 push 116 push 111 push 111 push 114 push 95 push 111 push 119 push 116 outc outc outc outc outc outc outc outc outc outc
-    ret;
+    push 0;
+    pop AX;
+    cycle_AX_draw:
+        push 0;
+        pop BX;
+        cycle_BX_draw:
 
-check_one_root:
-    call get_discr:
-    push 0
 
-    jne get_one_root_if_end:
-        push 1
-        ret;
-    get_one_root_if_end:
 
-    push 0
+
+            ;if (AX - h/2)^2 + (BX - w/2) ^ 2 <= RAD^2
+
+            push 0;
+            pop DX;
+
+            push 2 call get_height: div
+            push AX;
+            sub;
+            pop DX;
+            push DX;
+            push DX;
+            mult;
+
+            push 2 call get_width: div
+            push BX;
+            sub;
+            pop DX;
+            push DX;
+            push DX;
+            mult;
+
+
+            add;
+            pop DX;
+
+            push 300; RADIUS^2
+            push DX;
+
+
+
+            ja end_draw_if:
+
+                push AX;
+                call get_width:
+                mult;
+                push BX;
+                add;
+                pop CX;
+
+
+                push 64;
+                pop [CX];
+            end_draw_if:
+
+
+
+
+            push 1;
+            push BX;
+            add;
+            pop BX;
+
+            call get_width:
+            push BX;
+            jne cycle_BX_draw:
+
+        push 1;
+        push AX;
+        add;
+        pop AX;
+
+        call get_height:
+        push AX;
+        jne cycle_AX_draw:
+
+    draw;
     ret;
 
 end_func_dec:
 
+push 50;
+pop [6000]; FIXME: можно добавить новый регистр EX и писать это значение туда
 
+call get_height: call outN:
+call get_width: call outN: call new_line:;
 
+call fill_screen:
 
-
-
-in pop AX;
-in pop BX;
-in pop CX;
-
-
-call check_zero_root: push 1;
-jne out_zero_root_end:
-    call zero_root_tittle: call new_line:
-    jmp exit_state:
-out_zero_root_end:
-
-call check_one_root: push 1;
-jne out_one_root_end:
-    call one_root_tittle: call new_line:
-    call get_first_root: call outN:
-    jmp exit_state:
-out_one_root_end:
-
-call two_root_tittle: call new_line:
-call get_first_root: call outN:
-call get_second_root: call outN:
-
-
-exit_state:
+call draw_circle:
 
 hlt;
